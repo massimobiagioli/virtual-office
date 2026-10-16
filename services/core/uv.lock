@@ -692,6 +692,7 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "anyio" },
     { name = "hypothesis" },
     { name = "import-linter" },
     { name = "mypy" },
@@ -710,6 +711,7 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "anyio", specifier = "==4.15.1" },
     { name = "hypothesis", specifier = "==6.170.1" },
     { name = "import-linter", specifier = "==2.15" },
     { name = "mypy", specifier = "==2.4.0" },
