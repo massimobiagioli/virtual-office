@@ -1,3 +1,5 @@
+import asyncio
+
 import pytest
 from fastapi import FastAPI
 from fastapi.routing import APIRoute
@@ -5,31 +7,36 @@ from fastapi.routing import APIRoute
 from virtual_office.main import create_app
 from virtual_office.settings import Settings
 
-SETTINGS = Settings(
-    database_url="postgresql+asyncpg://core_app@postgres:5432/core",
-    catalog_url="http://agents-catalog:8001/",
-    ollama_base_url="http://ollama:11434/",
-)
 
-
-def test_app_factory_returns_a_fastapi_app_without_api_routes() -> None:
-    app = create_app(SETTINGS)
+def test_app_factory_returns_a_fastapi_app_without_api_routes(settings: Settings) -> None:
+    app = create_app(settings)
 
     assert isinstance(app, FastAPI)
     assert [route for route in app.routes if isinstance(route, APIRoute)] == []
 
 
-def test_app_factory_keeps_the_injected_settings() -> None:
-    app = create_app(SETTINGS)
+def test_app_factory_keeps_the_injected_settings(settings: Settings) -> None:
+    app = create_app(settings)
 
-    assert app.state.settings is SETTINGS
+    assert app.state.settings is settings
 
 
-def test_app_factory_reads_settings_from_the_environment(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("VO_DATABASE_URL", "postgresql+asyncpg://core_app@postgres:5432/core")
-    monkeypatch.setenv("VO_CATALOG_URL", "http://agents-catalog:8001/")
-    monkeypatch.setenv("VO_OLLAMA_BASE_URL", "http://ollama:11434/")
-
+@pytest.mark.usefixtures("core_environment")
+def test_app_factory_reads_settings_from_the_environment(settings: Settings) -> None:
     app = create_app()
 
-    assert app.state.settings == SETTINGS
+    assert app.state.settings == settings
+
+
+def test_app_lifespan_starts_and_stops(settings: Settings) -> None:
+    app = create_app(settings)
+    phases: list[str] = []
+
+    async def run_lifespan() -> None:
+        async with app.router.lifespan_context(app):
+            phases.append("running")
+        phases.append("stopped")
+
+    asyncio.run(run_lifespan())
+
+    assert phases == ["running", "stopped"]
