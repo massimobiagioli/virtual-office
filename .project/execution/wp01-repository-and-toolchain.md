@@ -18,7 +18,7 @@ acceptance criteria and tasks are checked, merged, and its ADR is written.
 
 - [x] US-01.01 — Root `docker-compose.yml` and `Makefile` (2 pts) · ADR: ADR-0005
 - [x] US-01.02 — Scaffold the `core` service package (3 pts) · ADR: ADR-0006
-- [ ] US-01.03 — Scaffold the `catalog` service package (2 pts)
+- [x] US-01.03 — Scaffold the `catalog` service package (2 pts) · ADR: ADR-0008
 - [ ] US-01.04 — Configure quality tools and architecture contracts (3 pts)
 - [ ] US-01.05 — Scaffold the Vue + Vite application (3 pts)
 - [ ] US-01.06 — Strict TypeScript and lint configuration (3 pts)
@@ -112,7 +112,7 @@ Renovate configuration, `.env.example`, `.gitignore`, `.editorconfig`.
 
 #### US-01.03 — Scaffold the `catalog` service package
 
-- [ ] **US-01.03 completed** · **Points:** 2 · **Priority:** Must · **ADR:** —
+- [x] **US-01.03 completed** · **Points:** 2 · **Priority:** Must · **ADR:** ADR-0008
 - **Story:** As a backend developer, I want the `catalog` package with the same
   conventions as `core`, so that both services look identical.
 - **Acceptance criteria:**
