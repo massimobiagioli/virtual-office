@@ -262,17 +262,30 @@ Compose v2.23.3 (below DOCKER.md §1 minimum; all commands still succeeded).
 
 **Findings**
 
-- [ ] **R1 · Minor** — `services/catalog/Dockerfile:41` (and `services/core/Dockerfile:41`)
+- [x] **R1 · Minor** — `services/catalog/Dockerfile:41` (and `services/core/Dockerfile:41`)
   — the `dev` target runs as UID 10001 with no home directory, so any `uv` command in the
   toolchain image (`uv lock --check`, `uv sync --frozen`, BACKEND.md §1 rule 5) fails with
   `Failed to initialize cache at /home/app/.cache/uv: Permission denied` unless
   `UV_CACHE_DIR` is overridden. Suggested fix: set `UV_CACHE_DIR=/tmp/uv-cache` in the `dev`
   stage of both Dockerfiles (they must stay identical, ADR-0004).
-- [ ] **R2 · Nit** — `services/catalog/pyproject.toml:4` — description is 117 characters,
+  → Resolved in 6e0c04f: `UV_CACHE_DIR=/tmp/uv-cache` in both `dev` stages and the DOCKER.md §4.2
+  sample; `uv lock --check` and `uv sync --frozen` pass as UID 10001 in both dev images.
+- [x] **R2 · Nit** — `services/catalog/pyproject.toml:4` — description is 117 characters,
   over the 100-column convention. Suggested fix: shorten it.
+  → Resolved in 754cccf: description shortened to 89 characters.
 
 **Notes**
 
 - Settings deliberately carry only `VO_DATABASE_URL` (required) and `VO_LOG_LEVEL`: the
   catalog calls no other service. `.env.example` (US-01.08) must list them.
 - `core`'s `VO_CATALOG_URL` (`http://catalog:8001/`) now points at a running service.
+
+**Rework:** 2026-10-16 · head 055be61 · gates: uv lock --check, uv sync --frozen, ruff,
+ruff format, mypy strict + pydantic plugin, pytest 19 passed (coverage 100 % with
+`--cov=src/catalog`), `docker compose config`, `make up`/`status` (`catalog` and `core` Up,
+UID 10001), dev-image `uv` commands — all pass.
+
+**Owner change during rework:** the project owner asked to rename `agents-catalog` to
+`catalog` everywhere. Done in 805969d (folder, package, image, compose, docs, branch renamed
+to `feat/us-01-03-catalog-service-package`) and 055be61 (Constitution v3.1.2, ADR-0007).
+Accepted ADR-0004 keeps the old name by rule. Not reviewed yet: needs Round 2.
