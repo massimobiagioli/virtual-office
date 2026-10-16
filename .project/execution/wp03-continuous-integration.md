@@ -104,7 +104,7 @@ protection documentation.
 - **Story:** As an operator, I want CI to build all images for amd64 and arm64 with caching.
 - **Acceptance criteria:**
   - [ ] AC1 — Given `docker-bake.hcl` mirroring compose services, when `docker buildx bake` runs, then
-    `frontend`, `core`, `agents-catalog` build for both platforms.
+    `frontend`, `core`, `catalog` build for both platforms.
   - [ ] AC2 — Given images, when tagged, then the tag is the commit SHA; nothing is pushed in v1.
   - [ ] AC3 — Given `infra/tests/check_images.sh` (US-02.03), when run, then it passes.
 - **Tasks:** bake file, workflow job with GitHub Actions cache backend.

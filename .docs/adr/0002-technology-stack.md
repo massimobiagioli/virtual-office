@@ -21,7 +21,7 @@ Virtual Office needs:
   time;
 - local-first operation with a local LLM, with an optional cloud provider;
 - reproducible environments: the project owner requires **everything dockerized**, with the
-  services `frontend`, `ollama`, `agents-catalog`, `core`, `postgres`;
+  services `frontend`, `ollama`, `catalog`, `core`, `postgres`;
 - the project owner requires **TypeScript + Vue (Vite)** on the frontend and
   **Python + FastAPI + Pydantic AI** on the backend, always on the latest stable versions,
   never obsolete libraries and never `latest` tags.
@@ -36,7 +36,7 @@ We will:
    - **`core`** — Python 3.15, FastAPI, Pydantic 2, **Pydantic AI** agents, SQLAlchemy 2.1
      async + asyncpg, Alembic; owns the domain, the event store, the Orchestrator and the
      REST/WebSocket API;
-   - **`agents-catalog`** — Python 3.15, FastAPI; read-mostly registry of versioned role
+   - **`catalog`** — Python 3.15, FastAPI; read-mostly registry of versioned role
      definitions, prompts, toolsets, model assignments, the character catalog and eval sets;
    - **`ollama`** — local LLM inference (default provider), models pinned by explicit tag;
    - **`postgres`** — PostgreSQL 18, one database per service.
@@ -66,7 +66,7 @@ major line does not require a new ADR, replacing a tool does.
    gives typed `deps`, typed structured outputs, test models and fits the Pydantic-based
    domain and API.
 5. **Agent definitions inside `core`** — simpler deployment, but couples prompt/definition
-   lifecycle to domain releases; a separate `agents-catalog` lets definitions be versioned and
+   lifecycle to domain releases; a separate `catalog` lets definitions be versioned and
    served independently, as requested.
 
 ## Consequences

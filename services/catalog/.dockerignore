@@ -1,4 +1,4 @@
-# Keep the agents-catalog build context minimal (DOCKER.md §2).
+# Keep the catalog build context minimal (DOCKER.md §2).
 .git
 .venv
 __pycache__

@@ -18,7 +18,7 @@ acceptance criteria and tasks are checked, merged, and its ADR is written.
 
 - [x] US-01.01 — Root `docker-compose.yml` and `Makefile` (2 pts) · ADR: ADR-0005
 - [x] US-01.02 — Scaffold the `core` service package (3 pts) · ADR: ADR-0006
-- [ ] US-01.03 — Scaffold the `agents-catalog` service package (2 pts)
+- [ ] US-01.03 — Scaffold the `catalog` service package (2 pts)
 - [ ] US-01.04 — Configure quality tools and architecture contracts (3 pts)
 - [ ] US-01.05 — Scaffold the Vue + Vite application (3 pts)
 - [ ] US-01.06 — Strict TypeScript and lint configuration (3 pts)
@@ -46,7 +46,7 @@ Renovate configuration, `.env.example`, `.gitignore`, `.editorconfig`.
 
 | ID    | Deliverable | Precise objective | Acceptance evidence | Stories |
 | ----- | ----------- | ----------------- | ------------------- | ------- |
-| D01.1 | Python services | `services/core` and `services/agents-catalog` as independent uv projects (own `pyproject.toml` + `uv.lock`) in `src/` layout; ruff, mypy strict, pytest, import-linter configured identically per service and passing | `uv sync --frozen`, `ruff check`, `ruff format --check`, `mypy`, `pytest`, `lint-imports` exit 0 inside each service container | US-01.01 – US-01.04 |
+| D01.1 | Python services | `services/core` and `services/catalog` as independent uv projects (own `pyproject.toml` + `uv.lock`) in `src/` layout; ruff, mypy strict, pytest, import-linter configured identically per service and passing | `uv sync --frozen`, `ruff check`, `ruff format --check`, `mypy`, `pytest`, `lint-imports` exit 0 inside each service container | US-01.01 – US-01.04 |
 | D01.2 | Frontend skeleton | Vue + Vite + TS app with the folder layout of FRONTEND.md §1, strict tsconfig, ESLint flat config incl. boundaries, Prettier, Vitest | `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build` exit 0; boundaries rule violation demo test fails as expected | US-01.05 – US-01.07 |
 | D01.3 | Repository hygiene | Editor/ignore files, pre-commit hooks, `no-latest` check, Renovate, `.env.example` | Pre-commit runs all hooks; `no-latest` script fails on a fixture containing `:latest`; Renovate config validates | US-01.08 – US-01.10 |
 
@@ -110,27 +110,27 @@ Renovate configuration, `.env.example`, `.gitignore`, `.editorconfig`.
 - **Tests:** unit smoke test; settings validation test.
 - **Done when:** `pytest` green for `core`.
 
-#### US-01.03 — Scaffold the `agents-catalog` service package
+#### US-01.03 — Scaffold the `catalog` service package
 
 - [ ] **US-01.03 completed** · **Points:** 2 · **Priority:** Must · **ADR:** —
-- **Story:** As a backend developer, I want the `agents-catalog` package with the same
+- **Story:** As a backend developer, I want the `catalog` package with the same
   conventions as `core`, so that both services look identical.
 - **Acceptance criteria:**
-  - [x] AC1 — Given `services/agents-catalog/src/agents_catalog/`, when listed, then it contains
+  - [x] AC1 — Given `services/catalog/src/catalog/`, when listed, then it contains
     `domain/`, `application/`, `infrastructure/`, `api/`, `settings.py`, `main.py`.
-  - [x] AC2 — Given `services/agents-catalog/catalog/`, when listed, then it contains `roles/`,
+  - [x] AC2 — Given `services/catalog/catalog/`, when listed, then it contains `roles/`,
     `prompts/`, `characters/`, `evals/` (each with a `.gitkeep`).
   - [x] AC3 — Given the package, when `pytest` runs, then the app-factory smoke test passes.
-  - [x] AC4 — Given `services/agents-catalog/pyproject.toml` and its `uv.lock`, when inspected, then
+  - [x] AC4 — Given `services/catalog/pyproject.toml` and its `uv.lock`, when inspected, then
     the pinning rules of US-01.02 AC5 hold and `uv sync --frozen` succeeds in the container.
-  - [x] AC5 — Given `services/agents-catalog/Dockerfile` and the `agents-catalog` service in
-    `docker-compose.yml` (`build.context: services/agents-catalog`), when `make up` runs, then
+  - [x] AC5 — Given `services/catalog/Dockerfile` and the `catalog` service in
+    `docker-compose.yml` (`build.context: services/catalog`), when `make up` runs, then
     `make status` shows it running next to `core`.
 - **Tasks:**
   - [x] Mirror US-01.02 for the catalog service (own `pyproject.toml` + `uv.lock`, package, catalog
     folders, `Dockerfile`, compose service).
 - **Tests:** unit smoke test.
-- **Done when:** `pytest` green for `agents-catalog`.
+- **Done when:** `pytest` green for `catalog`.
 
 #### US-01.04 — Configure quality tools and architecture contracts
 

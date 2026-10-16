@@ -215,7 +215,7 @@ WP20 → WP22 → WP23 → WP24.
 
 **Exit criteria**
 
-1. `docker compose up --build` brings `frontend`, `core`, `agents-catalog`, `ollama`, `postgres`
+1. `docker compose up --build` brings `frontend`, `core`, `catalog`, `ollama`, `postgres`
    to *healthy* and every one-off job to *completed* on a clean machine.
 2. CI runs lint, format, types, boundaries, unit tests, image build, Trivy scan and a compose
    smoke test on every PR, and all those jobs are required for merging.
@@ -277,7 +277,7 @@ every contributor — human or AI — lands in a codebase where:
 - The per-service project layout (ADR-0004): no Python manifest at the repository root.
 - `services/<service>/pyproject.toml` and committed `uv.lock` for each service.
 - `services/core` package with the layered tree of BACKEND.md §2 and an app factory.
-- `services/agents-catalog` package with the same conventions and the `catalog/` source tree.
+- `services/catalog` package with the same conventions and the `catalog/` source tree.
 - `pydantic-settings` based `Settings` classes in both services (env-only, `VO_` prefix).
 - Per-service tool configuration, identical in both services: ruff (lint + format), mypy
   strict, pytest (markers, anyio), coverage thresholds, import-linter contracts.
@@ -310,7 +310,7 @@ virtual-office/
 ├── docker-compose.yml · Makefile   # US-01.01; services added by each scaffold story
 ├── services/
 │   ├── core/                # pyproject.toml + uv.lock + tool config; virtual-office-core → src/virtual_office/{domain,application,agents,infrastructure,api}
-│   └── agents-catalog/      # pyproject.toml + uv.lock + tool config; virtual-office-agents-catalog → src/agents_catalog/{domain,application,infrastructure,api}
+│   └── catalog/             # pyproject.toml + uv.lock + tool config; virtual-office-catalog → src/catalog/{domain,application,infrastructure,api}
 ├── frontend/                # Vue + Vite + TS; src/{api,stores,composables,ui-amiga,windows,office-engine,office-renderer,assets,shared}
 ├── scripts/                 # check_no_latest.py (+ fixtures), later check_palette.py
 ├── .pre-commit-config.yaml · renovate.json · .editorconfig · .gitignore · .env.example
@@ -319,7 +319,7 @@ virtual-office/
 
 Key decisions applied (no new decisions are taken in WP01):
 
-1. **One lockfile per subproject** (`services/core`, `services/agents-catalog`, `frontend/`),
+1. **One lockfile per subproject** (`services/core`, `services/catalog`, `frontend/`),
    committed; each subproject is its own Docker build context (ADR-0004).
 2. **Identical tool configuration per service**, enforced by a drift check, not by review.
 3. **Settings are env-only** from day one (twelve-factor III) and fail fast on missing values.
@@ -332,7 +332,7 @@ Key decisions applied (no new decisions are taken in WP01):
 
 ##### D01.1 — Python workspace
 
-- **Objective:** the `core` and `agents-catalog` services as independent uv projects in `src/`
+- **Objective:** the `core` and `catalog` services as independent uv projects in `src/`
   layout, each with ruff, mypy strict, pytest and import-linter configured identically and
   passing on the skeleton.
 - **Contents:**
@@ -342,12 +342,12 @@ Key decisions applied (no new decisions are taken in WP01):
   - `services/core/pyproject.toml` (`virtual-office-core`), `src/virtual_office/` tree:
     `domain/{shared,kanban,staff,intake,decisions}`, `application/`, `agents/`,
     `infrastructure/`, `api/`, `settings.py`, `main.py`;
-  - `services/agents-catalog/pyproject.toml` (`virtual-office-agents-catalog`),
-    `src/agents_catalog/` tree and `catalog/{roles,prompts,characters,evals}`;
+  - `services/catalog/pyproject.toml` (`virtual-office-catalog`),
+    `src/catalog/` tree and `catalog/{roles,prompts,characters,evals}`;
   - `Settings` classes (`VO_` prefix, frozen, `extra="forbid"`), app factories with lifespan;
   - smoke tests `test_app_factory.py`, `test_settings.py` in both services;
   - negative fixtures for ruff (T20), mypy (untyped def), import-linter (domain → sqlalchemy).
-- **Interfaces exposed:** `virtual_office.main:app`, `agents_catalog.main:app` (ASGI apps used
+- **Interfaces exposed:** `virtual_office.main:app`, `catalog.main:app` (ASGI apps used
   by WP02 images).
 - **Acceptance evidence:** in each service's dev container, `uv sync --frozen`, `ruff check`,
   `ruff format --check`, `mypy`, `pytest`, `lint-imports` all exit 0; each negative fixture
@@ -439,7 +439,7 @@ Key decisions applied (no new decisions are taken in WP01):
 | `[tool.mypy]` | `strict = true`, `plugins = ["pydantic.mypy"]`, `warn_unreachable = true`, `files = ["src", "tests"]` |
 | `[tool.pytest.ini_options]` | `markers = ["integration", "eval", "tooling"]`, `addopts = "-m 'not integration and not eval and not tooling'"`, anyio backend `asyncio` |
 | `[tool.coverage]` | `branch = true`, source per package, `fail_under` per run |
-| `[tool.importlinter]` | the three contracts of BACKEND.md §2.1 for `core`, the layers contract for `agents-catalog` |
+| `[tool.importlinter]` | the three contracts of BACKEND.md §2.1 for `core`, the layers contract for `catalog` |
 | `frontend/tsconfig.app.json` | every option of FRONTEND.md §2 |
 | `frontend/eslint.config.ts` | Vue + TS strict presets, boundaries, `no-restricted-imports` (`pixi.js`, `@pixi/sound`), `no-restricted-globals` (`Audio`, `AudioContext`) |
 | `frontend/.npmrc` | `save-exact=true`, `engine-strict=true` |
@@ -461,7 +461,7 @@ Key decisions applied (no new decisions are taken in WP01):
 | ----- | ----- | ----------- | ------ | ---------- |
 | US-01.01 | Root `docker-compose.yml` and `Makefile` | D01.1 | 2 | — |
 | US-01.02 | Scaffold the `core` service package | D01.1 | 3 | US-01.01 |
-| US-01.03 | Scaffold the `agents-catalog` service package | D01.1 | 2 | US-01.01 |
+| US-01.03 | Scaffold the `catalog` service package | D01.1 | 2 | US-01.01 |
 | US-01.04 | Configure quality tools and architecture contracts | D01.1 | 3 | US-01.02, US-01.03 |
 | US-01.05 | Scaffold the Vue + Vite application | D01.2 | 3 | — |
 | US-01.06 | Strict TypeScript and lint configuration | D01.2 | 3 | US-01.05 |
@@ -478,7 +478,7 @@ Key decisions applied (no new decisions are taken in WP01):
 | Subproject images | `services/*/Dockerfile`, `frontend/Dockerfile` | `make up`, WP02 hardening |
 | Service manifests + locks | `services/*/pyproject.toml`, `services/*/uv.lock` | WP02 Python images, WP03 CI |
 | Core ASGI app | `services/core/src/virtual_office/main.py` | WP02, every backend WP |
-| Catalog ASGI app | `services/agents-catalog/src/agents_catalog/main.py` | WP02, WP09, WP15 |
+| Catalog ASGI app | `services/catalog/src/catalog/main.py` | WP02, WP09, WP15 |
 | Frontend app | `frontend/` | WP02 image, WP07, WP08 |
 | Lint/format/type configs | `services/*/pyproject.toml`, `frontend/eslint.config.ts`, `tsconfig.*` | everyone |
 | Boundary contracts | `[tool.importlinter]`, ESLint boundaries config | WP03 CI, every WP |
@@ -588,10 +588,10 @@ containers everybody else uses.
 
 **In scope**
 
-- `services/core/Dockerfile`, `services/agents-catalog/Dockerfile`, `frontend/Dockerfile`, each
+- `services/core/Dockerfile`, `services/catalog/Dockerfile`, `frontend/Dockerfile`, each
   with `runtime` and `dev` targets, following DOCKER.md §4.
 - A `.dockerignore` in every build context (`frontend/`, `services/core/`,
-  `services/agents-catalog/`); each subproject is its own build context (ADR-0004).
+  `services/catalog/`); each subproject is its own build context (ADR-0004).
 - `frontend/nginx.conf`: SPA fallback, `/healthz`, reverse proxy for `/api` and `/ws`, cache
   headers, security headers, JSON access logs.
 - `docker-compose.yml` (base), `docker-compose.dev.yml` (live sync), `docker-compose.gpu.yml` (NVIDIA).
@@ -613,7 +613,7 @@ containers everybody else uses.
 
 #### 5.2.4 Inputs and prerequisites
 
-- WP01 packages and apps (`virtual_office.main:app`, `agents_catalog.main:app`, `frontend/dist`).
+- WP01 packages and apps (`virtual_office.main:app`, `catalog.main:app`, `frontend/dist`).
 - Exact image tags from STACK.md; digests resolved when the Dockerfiles are written.
 - `.env.example` from WP01, extended with the database and Ollama variables.
 
@@ -627,7 +627,7 @@ flowchart TB
   subgraph office[network: office]
     FE[frontend nginx :8080]
     CORE[core :8000]
-    CAT[agents-catalog :8001]
+    CAT[catalog :8001]
     OLL[ollama :11434]
     PG[(postgres :5432)]
     MC[migrate-core job]
@@ -649,7 +649,7 @@ flowchart TB
 Startup order enforced by compose:
 
 1. `postgres` healthy → `migrate-core`, `migrate-catalog` complete.
-2. `agents-catalog` healthy → `catalog-seed` complete.
+2. `catalog` healthy → `catalog-seed` complete.
 3. `ollama` healthy → `ollama-init` complete (skipped in fake mode).
 4. `core` healthy (ready = DB + catalog + Ollama or fake).
 5. `frontend` healthy.
@@ -662,7 +662,7 @@ exceptions (`postgres`, `ollama` writable data dirs) are commented in the file.
 ##### D02.1 — Dockerfiles
 
 - **Objective:** multi-stage, non-root, digest-pinned images for `frontend`, `core` and
-  `agents-catalog`, each with a minimal `runtime` target and a `dev` target with tooling.
+  `catalog`, each with a minimal `runtime` target and a `dev` target with tooling.
 - **Contents:**
   - Python Dockerfiles (context = service folder): `base` (env, user 10001), `deps` (uv sync without project sources),
     `build` (sources), `runtime` (venv only), `dev` (all groups, reload); uv binary copied from
@@ -995,7 +995,7 @@ flowchart LR
 - **Objective:** every PR builds all images reproducibly with cache and blocks fixable
   HIGH/CRITICAL vulnerabilities.
 - **Contents:**
-  - `docker-bake.hcl` with targets `frontend`, `core`, `agents-catalog` (runtime) and `*-dev`;
+  - `docker-bake.hcl` with targets `frontend`, `core`, `catalog` (runtime) and `*-dev`;
   - `images` job (amd64 on PRs, multi-arch on main/nightly) tagging with the commit SHA;
   - `check_images.sh` run after build;
   - `scan` job running pinned Trivy on each runtime image; `.trivyignore` policy (expiry date
@@ -1060,7 +1060,7 @@ flowchart LR
 | Job | Trigger | Runs in | Main steps | Timeout | Artifacts |
 | --- | ------- | ------- | ---------- | ------- | --------- |
 | `repo-checks` | PR, main | pinned Python image | no-latest, link check, Renovate validation (if changed) | 5 min | — |
-| `backend-checks` | PR, main | `core-dev`, `agents-catalog-dev` | ruff, ruff format, mypy, lint-imports, pytest unit + coverage | 15 min | coverage XML |
+| `backend-checks` | PR, main | `core-dev`, `catalog-dev` | ruff, ruff format, mypy, lint-imports, pytest unit + coverage | 15 min | coverage XML |
 | `frontend-checks` | PR, main | `frontend-deps` | eslint, prettier, vue-tsc, vitest + coverage | 15 min | coverage XML |
 | `images` | PR (amd64), main/nightly (multi-arch) | buildx | bake all targets, `check_images.sh` | 30 min | image digests list |
 | `scan` | after `images` | pinned Trivy | scan runtime images | 10 min | Trivy report |
@@ -1271,7 +1271,7 @@ specific domain:
 - Concrete projections (WP06 board/card/project lists; later WPs add more).
 - WebSocket delivery (WP06) and Orchestrator subscription (WP17).
 - Snapshot usage (table exists; usage only when measured need, via ADR).
-- `agents-catalog` tables (WP09, WP15) — only its Alembic environment is created.
+- `catalog` tables (WP09, WP15) — only its Alembic environment is created.
 
 #### 6.1.4 Inputs and prerequisites
 
@@ -2820,7 +2820,7 @@ who acts, and every action must already be readable. Traceability first, autonom
 The user asked for an office they can **personalize**: names, faces chosen from a finite set of
 Amiga-style characters, and the freedom to run with only some agents (e.g. a single developer).
 WP09 delivers this as first-class domain behavior. It also brings the second service,
-`agents-catalog`, to life with its first content — the Character Catalog — establishing the
+`catalog`, to life with its first content — the Character Catalog — establishing the
 pattern (versioned files → seed → read API → anti-corruption client in `core`) that WP15 reuses
 for role definitions and prompts.
 
@@ -2839,7 +2839,7 @@ for role definitions and prompts.
 
 **In scope**
 
-- `agents-catalog`: `catalog.characters` table, model, seed job from
+- `catalog`: `catalog.characters` table, model, seed job from
   `catalog/characters/characters.yaml`, `GET /characters`, `GET /characters/{faceId}` with ETag.
 - `core` staff domain: `RenameAgent`, `ChangeAgentFace`, `DisableAgent(mode)`, `EnableAgent`,
   `SetCompetenceTags`, `PauseAgent`, `ResumeAgent`; events; errors (`AgentNameTaken`,
@@ -2868,7 +2868,7 @@ for role definitions and prompts.
 flowchart LR
   YAML[catalog/characters/characters.yaml] --> SEED[catalog-seed job]
   SEED --> CDB[(catalog.characters)]
-  CDB --> CAPI[agents-catalog GET /characters]
+  CDB --> CAPI[catalog GET /characters]
   CAPI -->|ETag| ACL[core catalog client ACL]
   ACL --> DOM[staff domain: face validation]
   UI[Staff Room] -->|PATCH/POST /api/agents| CORE[core handlers]
@@ -3050,8 +3050,8 @@ the card and office streams prevents races with the agent finishing.
 
 | Artifact | Path | Consumed by |
 | -------- | ---- | ----------- |
-| Character YAML | `services/agents-catalog/catalog/characters/characters.yaml` | seed job, WP12 artists |
-| Catalog characters API | `agents_catalog/api/routers/characters.py` | core |
+| Character YAML | `services/catalog/catalog/characters/characters.yaml` | seed job, WP12 artists |
+| Catalog characters API | `catalog/api/routers/characters.py` | core |
 | Catalog client (ACL) | `virtual_office/infrastructure/catalog/` | WP15 role definitions |
 | Staff domain additions | `virtual_office/domain/staff/` | WP14, WP15, WP17 |
 | Staff Room window | `frontend/src/windows/staff/` | users |
@@ -4726,7 +4726,7 @@ Every AI agent of the office shares the same needs: instructions that are versio
 reviewable; tools limited to its role; a model chosen by configuration; structured outputs;
 bounded, resilient execution; respect for pauses and budgets; protection against prompt
 injection; complete traces; and measurable quality. WP15 builds this once. It completes the
-`agents-catalog` service with role definitions and prompts and gives `core` the job runtime on
+`catalog` service with role definitions and prompts and gives `core` the job runtime on
 top of Pydantic AI and Ollama.
 
 #### 9.1.2 Problems it solves
@@ -4975,12 +4975,12 @@ job_kinds: [review-card]
 
 | Artifact | Path | Consumed by |
 | -------- | ---- | ----------- |
-| Role YAML + prompts | `services/agents-catalog/catalog/{roles,prompts}/` | catalog seed, reviewers |
-| Roles API | `agents_catalog/api/routers/roles.py` | core |
+| Role YAML + prompts | `services/catalog/catalog/{roles,prompts}/` | catalog seed, reviewers |
+| Roles API | `catalog/api/routers/roles.py` | core |
 | Model factory | `virtual_office/infrastructure/llm/` | runner |
 | Job runtime | `virtual_office/application/agents/`, `domain/.../jobs` | all roles |
 | Transcripts | `runtime.agent_runs` | transcript window |
-| Eval harness | `services/agents-catalog/catalog/evals/`, `tests/evals/` | nightly CI |
+| Eval harness | `services/catalog/catalog/evals/`, `tests/evals/` | nightly CI |
 
 #### 9.1.9 Expected ADRs
 

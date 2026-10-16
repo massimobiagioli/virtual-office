@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 
-from agents_catalog.api import app as api_app
-from agents_catalog.settings import Settings
+from catalog.api import app as api_app
+from catalog.settings import Settings
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:

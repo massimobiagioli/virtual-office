@@ -1,6 +1,6 @@
 # Virtual Office stack (Compose Specification, no `version:` key). Drive it with `make`.
 # Each subproject adds its own service here, built from its own folder (ADR-0004):
-# core (US-01.02), agents-catalog (US-01.03), frontend (US-01.05); WP02 hardens the stack
+# core (US-01.02), catalog (US-01.03), frontend (US-01.05); WP02 hardens the stack
 # (healthchecks, security defaults, resource limits, network, postgres, ollama).
 name: virtual-office
 
@@ -15,14 +15,14 @@ services:
     environment:
       # Addresses on the compose network; the services behind them arrive in WP02/WP04.
       VO_DATABASE_URL: postgresql+asyncpg://core_app@postgres:5432/core
-      VO_CATALOG_URL: http://agents-catalog:8001/
+      VO_CATALOG_URL: http://catalog:8001/
       VO_OLLAMA_BASE_URL: ${VO_OLLAMA_BASE_URL:-http://ollama:11434/}
 
-  agents-catalog:
+  catalog:
     # Same temporary image tag default as core (ADR-0006); WP02 makes it required.
-    image: virtual-office/agents-catalog:${VO_IMAGE_TAG:-dev}
+    image: virtual-office/catalog:${VO_IMAGE_TAG:-dev}
     build:
-      context: services/agents-catalog
+      context: services/catalog
       target: runtime
     environment:
       # The catalog database arrives with postgres in WP02/WP04 (POSTGRES.md §2).

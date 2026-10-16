@@ -43,7 +43,7 @@ Everything you write — code, comments, docs, commit messages — is in English
 
    | Area touched | Guide(s) | Topic skill(s) |
    | --- | --- | --- |
-   | `services/core`, `services/agents-catalog` (Python) | `.docs/BACKEND.md` | `tracing-events`, `enforcing-kanban-workflow`, `authoring-office-agents` as relevant |
+   | `services/core`, `services/catalog` (Python) | `.docs/BACKEND.md` | `tracing-events`, `enforcing-kanban-workflow`, `authoring-office-agents` as relevant |
    | `frontend/` (Vue/TS) | `.docs/FRONTEND.md` | `designing-amiga-ui`, `building-office-scene` as relevant |
    | Anything visible (UI, pixel art, copy) | `.docs/DESIGN.md` | `designing-amiga-ui` |
    | Dockerfiles, compose, `.env.example` | `.docs/DOCKER.md` | — |

@@ -45,7 +45,7 @@ with only Docker can start an (empty) Virtual Office.
 
 | ID    | Deliverable | Precise objective | Acceptance evidence | Stories |
 | ----- | ----------- | ----------------- | ------------------- | ------- |
-| D02.1 | Dockerfiles | Multi-stage, non-root (UID 10001), digest-pinned Dockerfiles for `frontend`, `core`, `agents-catalog`, each with `runtime` and `dev` targets | `docker build --target runtime` succeeds for all; `docker run … id -u` prints `10001`; images < 250 MB (Python) / < 60 MB (frontend) | US-02.01 – US-02.03 |
+| D02.1 | Dockerfiles | Multi-stage, non-root (UID 10001), digest-pinned Dockerfiles for `frontend`, `core`, `catalog`, each with `runtime` and `dev` targets | `docker build --target runtime` succeeds for all; `docker run … id -u` prints `10001`; images < 250 MB (Python) / < 60 MB (frontend) | US-02.01 – US-02.03 |
 | D02.2 | Compose stack | Base, dev and GPU compose files following DOCKER.md §5 | `docker compose config` valid for each combination; only `frontend` publishes a port, bound to `127.0.0.1` | US-02.04 – US-02.06 |
 | D02.3 | Data and model init | Postgres init (2 DBs, 4 roles, privileges) and `ollama-init` pulling locked models with digest verification | Fresh volume init creates DBs/roles; tampered digest makes `ollama-init` exit non-zero | US-02.07 – US-02.08 |
 | D02.4 | Health | `/health/live`, `/health/ready` in both Python services; `/healthz` in nginx; all services healthy | `docker compose up --build -d && docker compose ps` shows all healthy in ≤ 120 s (models already pulled) | US-02.09 – US-02.10 |
@@ -58,7 +58,7 @@ with only Docker can start an (empty) Virtual Office.
 
 - [ ] **US-02.01 completed** · **Points:** 5 · **Priority:** Must · **ADR:** —
 - **Story:** As an operator, I want identical, minimal, non-root images for `core` and
-  `agents-catalog`, so that both services build and run the same way everywhere.
+  `catalog`, so that both services build and run the same way everywhere.
 - **Acceptance criteria:**
   - [ ] AC1 — Given `services/<svc>/Dockerfile`, when built with context = repo root and target
     `runtime`, then it follows DOCKER.md §4.2 (stages, uv copy from pinned image, cache mounts,
@@ -114,7 +114,7 @@ with only Docker can start an (empty) Virtual Office.
   jobs, so that `docker compose up` starts Virtual Office.
 - **Acceptance criteria:**
   - [ ] AC1 — Given `docker-compose.yml`, when validated with `docker compose config`, then it declares
-    services `frontend`, `core`, `agents-catalog`, `ollama`, `postgres` and jobs
+    services `frontend`, `core`, `catalog`, `ollama`, `postgres` and jobs
     `migrate-core`, `migrate-catalog`, `catalog-seed`, `ollama-init`, `rebuild-projections`
     (profile `admin`), `backup` (profile `backup`).
   - [ ] AC2 — Given every long-running service, when inspected, then it has a healthcheck, and every
@@ -127,7 +127,7 @@ with only Docker can start an (empty) Virtual Office.
   - [ ] AC6 — Given the root `Makefile` created in US-01.01, when `make up`, `make status`,
     `make logs`, `make down` run against the hardened stack, then they still work unchanged.
   - [ ] AC7 — Given the compose file, when inspected, then every app image builds from its own
-    subproject folder (`build.context: frontend | services/core | services/agents-catalog`).
+    subproject folder (`build.context: frontend | services/core | services/catalog`).
 - **Tasks:** harden the compose file started in WP01; placeholder commands for jobs whose implementation arrives later
   (`migrate-*` runs `alembic upgrade head` on an empty history).
 - **Tests:** `docker compose config` in CI; smoke test.
@@ -212,7 +212,7 @@ with only Docker can start an (empty) Virtual Office.
   - [ ] AC1 — Given `GET /health/live`, when the process is up, then it returns 200 `{"status":"ok"}`.
   - [ ] AC2 — Given `GET /health/ready` on `core`, when Postgres, catalog and (unless fake mode) Ollama
     are reachable, then 200 with per-dependency status; otherwise 503 with the failing ones.
-  - [ ] AC3 — Given `agents-catalog`, when Postgres is reachable, then ready is 200.
+  - [ ] AC3 — Given `catalog`, when Postgres is reachable, then ready is 200.
   - [ ] AC4 — Given readiness checks, when a dependency hangs, then the check times out in ≤ 2 s.
 - **Tasks:** router `api/routers/health.py` in both services; dependency probes as ports.
 - **Tests:** unit tests with fake probes; smoke test in compose.

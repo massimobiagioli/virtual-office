@@ -2,7 +2,7 @@
 
 | Field   | Value                                                                                   |
 | ------- | --------------------------------------------------------------------------------------- |
-| Scope   | `services/core` and `services/agents-catalog` (Python, FastAPI, Pydantic, Pydantic AI)  |
+| Scope   | `services/core` and `services/catalog` (Python, FastAPI, Pydantic, Pydantic AI)  |
 | Related | [CONSTITUTION.md](CONSTITUTION.md) · [STACK.md](STACK.md) · [PRINCIPLES.md](PRINCIPLES.md) · [POSTGRES.md](POSTGRES.md) · [OLLAMA.md](OLLAMA.md) · [DOCKER.md](DOCKER.md) |
 
 This guide is the **standard** for writing backend code. Two services, one style: a reader
@@ -25,13 +25,13 @@ services/
 │   ├── alembic.ini · alembic/
 │   ├── src/virtual_office/       # import package
 │   └── tests/
-└── agents-catalog/               # Docker build context of the agents-catalog image
-    ├── pyproject.toml            # name = "virtual-office-agents-catalog", same tool config
+└── catalog/                      # Docker build context of the catalog image
+    ├── pyproject.toml            # name = "virtual-office-catalog", same tool config
     ├── uv.lock                   # committed
     ├── Dockerfile
     ├── alembic.ini · alembic/
     ├── catalog/                  # source definitions (YAML, Markdown prompts, evals)
-    ├── src/agents_catalog/
+    ├── src/catalog/
     └── tests/
 ```
 
@@ -74,7 +74,7 @@ virtual_office/
 │   ├── db/                       # engine, session, metadata, tables
 │   ├── event_store/              # Postgres event store, upcasters
 │   ├── projections/              # projectors + projection repositories
-│   ├── catalog/                  # HTTP client + anti-corruption layer for agents-catalog
+│   ├── catalog/                  # HTTP client + anti-corruption layer for catalog
 │   ├── llm/                      # model factory (Ollama / optional cloud)
 │   └── workspace/                # sandboxed git + command runner
 ├── api/
@@ -88,7 +88,7 @@ virtual_office/
 └── main.py                       # uvicorn factory: create_app() reads Settings from the env
 ```
 
-`agents-catalog` uses the same shape, minus `agents/` and `orchestrator/`.
+`catalog` uses the same shape, minus `agents/` and `orchestrator/`.
 
 ### 2.1 Dependency rule (import-linter contracts, CI-enforced)
 

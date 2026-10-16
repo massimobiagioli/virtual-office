@@ -1,6 +1,6 @@
 ---
 name: authoring-office-agents
-description: How to define and change the AI agents of Virtual Office (Project Manager, Developers, Architect, Designer, Support, QA) with Pydantic AI - role contracts, versioned prompts in the agents-catalog service, Pydantic output models, least-privilege toolsets, agent jobs, memory, PM global awareness and grounded PM chat, staff customization and evals. Use when editing services/agents-catalog, services/core agents module, LLM provider configuration, the staff room, or PM chat.
+description: How to define and change the AI agents of Virtual Office (Project Manager, Developers, Architect, Designer, Support, QA) with Pydantic AI - role contracts, versioned prompts in the catalog service, Pydantic output models, least-privilege toolsets, agent jobs, memory, PM global awareness and grounded PM chat, staff customization and evals. Use when editing services/catalog, services/core agents module, LLM provider configuration, the staff room, or PM chat.
 ---
 
 # Authoring office agents
@@ -13,7 +13,7 @@ Authoritative source: Constitution Articles V, VI, X, XI, XVI and §15.6–15.7.
 A role is split between two services (see `.docs/STACK.md` §5):
 
 ```
-services/agents-catalog/catalog/
+services/catalog/catalog/
 ├── roles/<role>.yaml               # definition: tools, output model name, default model tag, competence tags
 ├── prompts/<role>/v<N>.md          # instructions, versioned, immutable once published
 ├── characters.yaml                 # Character Catalog (face IDs)

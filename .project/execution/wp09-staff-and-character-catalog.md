@@ -35,12 +35,12 @@ acceptance criteria and tasks are checked, merged, and its ADR is written.
 
 Let the user shape the office: rename agents, choose faces from the finite Character Catalog,
 enable or disable agents (with a safe hand-over of work), tune developer specializations and
-pause agents — all as domain events, served by the `agents-catalog` service for characters and
+pause agents — all as domain events, served by the `catalog` service for characters and
 by `core` for the staff, and presented in the Staff Room window.
 
 ## 2. Scope
 
-**In:** `agents-catalog` character schema, seed, API; `core` catalog client; staff commands and
+**In:** `catalog` character schema, seed, API; `core` catalog client; staff commands and
 events; staff projection; Staff Room window; portrait picker; faces in tiles.
 
 **Out:** pixel-art final portraits (WP12 — placeholders with the right ids and sizes here);

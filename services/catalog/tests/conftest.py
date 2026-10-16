@@ -1,6 +1,6 @@
 import pytest
 
-from agents_catalog.settings import Settings
+from catalog.settings import Settings
 
 REQUIRED_ENVIRONMENT = {
     "VO_DATABASE_URL": "postgresql+asyncpg://catalog_app@postgres:5432/catalog",

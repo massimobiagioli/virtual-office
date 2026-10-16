@@ -73,7 +73,7 @@ Changes to these values are made in `docker-compose.yml` only, with a note in th
 | UI/UX Designer     | `gemma4:12b`          | Specs and copy; lighter model |
 | Support (triage)   | `gemma4:12b`          | Classification and summarization |
 
-- Defaults live in the **agents-catalog** role definitions (`default_model`); the user can
+- Defaults live in the **catalog** role definitions (`default_model`); the user can
   override per role in Preferences (stored as an event, applied by `core`).
 - Every model used by any role MUST be in `models.lock`.
 - A model must support **tool calling** and **structured output** to be assignable; the
@@ -86,7 +86,7 @@ Changes to these values are made in `docker-compose.yml` only, with a note in th
 - [ ] Add it to infra/ollama/models.lock (tag + digest)
 - [ ] Run the evaluation sets of every affected role against it (§5)
 - [ ] Compare with the current baseline: pass rate, p95 latency, memory footprint
-- [ ] Update the role default in agents-catalog (new definition version) and STACK.md §6
+- [ ] Update the role default in catalog (new definition version) and STACK.md §6
 - [ ] Replacing the default model of a role family requires an ADR
 ```
 
@@ -127,7 +127,7 @@ Changes to these values are made in `docker-compose.yml` only, with a note in th
 
 ## 5. Evaluation
 
-- Each role has an evaluation dataset in `services/agents-catalog/catalog/evals/<role>/`
+- Each role has an evaluation dataset in `services/catalog/catalog/evals/<role>/`
   written with **pydantic-evals** (cases + evaluators checking properties, not exact text).
 - Evals run in a dedicated CI job (`@pytest.mark.eval`) against the real `ollama` service
   with the locked models; results (pass rate, latency, tokens) are stored as an artifact and
@@ -166,7 +166,7 @@ local dev stack.
 
 ```
 - [ ] Model tags explicit and present in models.lock with digest; no :latest
-- [ ] Role defaults changed through a new agents-catalog definition version
+- [ ] Role defaults changed through a new catalog definition version
 - [ ] Evals run and compared with baseline; ADR if a role's default family changes
 - [ ] Concurrency settings consistent (VO_LLM_CONCURRENCY vs OLLAMA_NUM_PARALLEL)
 - [ ] No raw HTTP calls to Ollama outside infrastructure/llm

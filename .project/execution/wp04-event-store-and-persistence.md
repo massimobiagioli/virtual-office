@@ -36,7 +36,7 @@ to define events, decisions and projections.
 
 ## 2. Scope
 
-**In:** Alembic setup for `core` and `agents-catalog`; schemas `event_store`, `projection`,
+**In:** Alembic setup for `core` and `catalog`; schemas `event_store`, `projection`,
 `runtime`; event store adapter; serialization and upcasting; Unit of Work; projector base;
 checkpoints; rebuild job; in-process post-commit bus; integration tests with testcontainers.
 
@@ -62,7 +62,7 @@ the bus); snapshots (only the table is created, usage deferred until measured ne
 - **Story:** As a backend developer, I want an async Alembic environment per service with the
   project naming convention, so that every schema change is versioned the same way.
 - **Acceptance criteria:**
-  - [ ] AC1 — Given `services/core/alembic/` and `services/agents-catalog/alembic/`, when
+  - [ ] AC1 — Given `services/core/alembic/` and `services/catalog/alembic/`, when
     `alembic upgrade head` runs in the `migrate-*` job, then it connects with the **owner**
     role DSN from env and succeeds on an empty database.
   - [ ] AC2 — Given `alembic.ini`, when a revision is created, then its file name follows

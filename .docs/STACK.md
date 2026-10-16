@@ -53,7 +53,7 @@ docker compose up --build
 flowchart LR
   B[Browser] -->|HTTP :8080| FE[frontend<br/>nginx + Vue SPA]
   FE -->|/api, /ws reverse proxy| CORE[core<br/>FastAPI + Pydantic AI]
-  CORE -->|HTTP| CAT[agents-catalog<br/>FastAPI]
+  CORE -->|HTTP| CAT[catalog<br/>FastAPI]
   CORE -->|OpenAI-compatible API| OLL[ollama]
   CORE -->|asyncpg| PG[(postgres<br/>db: core)]
   CAT -->|asyncpg| PG2[(postgres<br/>db: catalog)]
@@ -64,21 +64,21 @@ flowchart LR
 | ---------------- | -------------------------------------------------------------------------------------------------- | ---------------------------------------------- | --------------- | --------------- |
 | `frontend`       | Serves the My Workbench SPA (static build) and reverse-proxies `/api` and `/ws` to `core`           | `nginxinc/nginx-unprivileged:1.31.7-alpine3.24` (runtime), `node:24.22.0-trixie-slim` (build) | 8080 | `127.0.0.1:8080` |
 | `core`           | Domain, application, Orchestrator, agent runtime (Pydantic AI), REST + WebSocket API, event store   | `python:3.15.0-slim-trixie`                    | 8000            | no              |
-| `agents-catalog` | Registry of agent definitions: roles, versioned prompts, toolsets, output schemas, model assignments, character catalog, eval sets | `python:3.15.0-slim-trixie` | 8001 | no |
+| `catalog` | Registry of agent definitions: roles, versioned prompts, toolsets, output schemas, model assignments, character catalog, eval sets | `python:3.15.0-slim-trixie` | 8001 | no |
 | `ollama`         | Local LLM inference server                                                                          | `ollama/ollama:0.40.5`                         | 11434           | no              |
 | `postgres`       | Persistence: one cluster, one database per service (`core`, `catalog`)                             | `postgres:18.6-trixie`                         | 5432            | no (dev profile: `127.0.0.1:5432`) |
 
 ### 2.1 Service ownership rules
 
-- **Database per service.** `core` owns database `core`; `agents-catalog` owns database
+- **Database per service.** `core` owns database `core`; `catalog` owns database
   `catalog`. A service MUST NOT read or write another service's database. Each has its own DB
   role with least privileges (no superuser at runtime).
 - **`core` is the only writer of domain state** (events, projections). The Constitution's
   domain rules live here.
-- **`agents-catalog` is read-mostly.** `core` fetches role definitions by version
+- **`catalog` is read-mostly.** `core` fetches role definitions by version
   (`GET /roles/{role}/versions/{v}`), caches them in memory with ETag revalidation, and records
   the resolved version in every agent job event. Catalog content is seeded from versioned files
-  in `services/agents-catalog/catalog/` (prompts as Markdown, definitions as YAML validated by
+  in `services/catalog/catalog/` (prompts as Markdown, definitions as YAML validated by
   Pydantic) — files are the source, the database is the served/indexed copy.
 - **`ollama` is stateless except for its model volume.** Models are pulled by a one-shot
   `ollama-init` job (same image) that pulls the model tags locked (tag + digest) in
@@ -98,11 +98,11 @@ Makefile                  # thin wrapper over `docker compose`: help (default), 
 Mandatory in `docker-compose.yml`:
 
 - `healthcheck` for every service; `depends_on` with `condition: service_healthy`
-  (`core` waits for `postgres`, `agents-catalog`, `ollama`);
+  (`core` waits for `postgres`, `catalog`, `ollama`);
 - named volumes `pgdata`, `ollama-models`; no host bind mounts in the base file;
 - non-root users in every image (`USER` set in Dockerfiles); read-only root filesystem where
   possible (`read_only: true` + `tmpfs` for `/tmp`);
-- resource limits (`deploy.resources.limits`) for `core`, `agents-catalog`, `frontend`;
+- resource limits (`deploy.resources.limits`) for `core`, `catalog`, `frontend`;
 - one internal network `office`; only `frontend` publishes a port, bound to `127.0.0.1`;
 - one-shot jobs: `migrate-core`, `migrate-catalog` (Alembic upgrade), `ollama-init`
   (model pull), run before the long-running services start.
@@ -228,7 +228,7 @@ smallest tool that gives GPU rendering with pixel-perfect control.
 
 ---
 
-## 5. Backend services (`services/core`, `services/agents-catalog`)
+## 5. Backend services (`services/core`, `services/catalog`)
 
 Python + FastAPI + Pydantic AI. Both services share tooling and conventions; each is an independent uv project with its own
 `pyproject.toml` and `uv.lock` inside its folder, and no Python manifest sits at the repository
@@ -250,7 +250,7 @@ root ([ADR-0004](adr/0004-per-service-python-projects.md)).
 | IDs                     | python-ulid                  | 4.0.1     | |
 | Logging                 | structlog                    | 26.1.0    | JSON logs to stdout, correlation IDs |
 | Tracing / metrics       | opentelemetry-sdk            | 1.45.1    | OTLP export optional via env |
-| HTTP client             | httpx                        | 0.28.1    | `core` → `agents-catalog`; also test client |
+| HTTP client             | httpx                        | 0.28.1    | `core` → `catalog`; also test client |
 | Tests                   | pytest                       | 9.1.1     | |
 | Async tests             | anyio (pytest plugin)        | 4.15.1    | Single async test plugin (no pytest-asyncio) |
 | Property tests          | hypothesis                   | 6.170.1   | Kanban invariants (Constitution E17) |
@@ -258,7 +258,7 @@ root ([ADR-0004](adr/0004-per-service-python-projects.md)).
 | Coverage                | pytest-cov                   | 7.1.0     | Thresholds per Constitution §18.2 |
 | Test data               | polyfactory                  | 3.3.0     | Factories for Pydantic models |
 | Integration DB          | testcontainers               | 4.15.0    | Real `postgres:18.6-trixie` in tests |
-| HTTP mocking            | respx                        | 0.23.1    | Mock `agents-catalog` / LLM HTTP in tests |
+| HTTP mocking            | respx                        | 0.23.1    | Mock `catalog` / LLM HTTP in tests |
 | Lint + format           | ruff                         | 0.17.1    | Replaces flake8/isort/black |
 | Type checking           | mypy (strict, pydantic plugin) | 2.4.0   | `ty` is still 0.0.x → not adopted yet |
 | Architecture boundaries | import-linter                | 2.15      | Enforces the dependency rule |
@@ -293,7 +293,7 @@ Dependency rule (import-linter contract): `domain` ← `application` ← `agents
   (Constitution §16.9). The `FakeLlmAdapter` of the Constitution is implemented this way.
 - Usage (tokens, requests) from each run is recorded in the job events.
 
-### 5.3 `agents-catalog` responsibilities
+### 5.3 `catalog` responsibilities
 
 - Serves versioned role definitions: `role`, `version`, `instructions` (Markdown), `tools`
   (names from an allow-list known by `core`), `output_schema` reference, `default_model`,
@@ -366,7 +366,7 @@ virtual-office/
 ├── frontend/                     # Vue + Vite SPA, ui-amiga kit, office-engine, Dockerfile, nginx.conf
 ├── services/
 │   ├── core/                     # FastAPI + Pydantic AI, pyproject.toml · uv.lock, Dockerfile, alembic/
-│   └── agents-catalog/           # FastAPI, catalog/ (prompts, role YAML, characters), pyproject.toml · uv.lock, Dockerfile, alembic/
+│   └── catalog/                  # FastAPI, catalog/ (prompts, role YAML, characters), pyproject.toml · uv.lock, Dockerfile, alembic/
 ├── assets/                       # Sprites, tiles, maps, fonts (+ LICENSES.md, src/)
 └── e2e/                          # Playwright tests against the compose stack
 ```

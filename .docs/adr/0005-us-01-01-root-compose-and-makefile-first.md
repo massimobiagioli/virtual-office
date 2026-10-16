@@ -28,7 +28,7 @@ We will drive the repository with `make` from the first story:
    `Makefile` (`help` default goal; `up`, `down`, `logs`, `status`, each a single
    `docker compose` call).
 2. Each story that scaffolds a subproject adds its `Dockerfile`, `.dockerignore` and compose
-   service in the same change: `core` (US-01.02), `agents-catalog` (US-01.03), `frontend`
+   service in the same change: `core` (US-01.02), `catalog` (US-01.03), `frontend`
    (US-01.05). `make up` is verified from US-01.02, when the first service exists.
 3. WP02 keeps hardening: healthchecks, security defaults, resource limits, Postgres, Ollama,
    one-off jobs, dev/GPU overlays. It extends the files instead of creating them.
