@@ -367,6 +367,7 @@ virtual-office/
 ├── services/
 │   ├── core/                     # FastAPI + Pydantic AI, pyproject.toml · uv.lock, Dockerfile, alembic/
 │   └── catalog/                  # FastAPI, catalog/ (prompts, role YAML, characters), pyproject.toml · uv.lock, Dockerfile, alembic/
+├── scripts/                      # Repository checks, stdlib only, run with `python -I` (pins, drift, coverage, no-latest)
 ├── assets/                       # Sprites, tiles, maps, fonts (+ LICENSES.md, src/)
 └── e2e/                          # Playwright tests against the compose stack
 ```
