@@ -6,6 +6,8 @@ name: virtual-office
 
 services:
   core:
+    # DOCKER.md §3 wants ${VO_IMAGE_TAG:?}; the `dev` default keeps `make status|logs|down`
+    # working on a clean clone until .env.example exists (US-01.08). WP02 makes it required.
     image: virtual-office/core:${VO_IMAGE_TAG:-dev}
     build:
       context: services/core
