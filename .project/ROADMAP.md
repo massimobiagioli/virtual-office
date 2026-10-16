@@ -246,8 +246,8 @@ Compose with five services, Ollama in a container) before any feature depends on
 
 #### 5.1.1 Purpose and context
 
-WP01 creates the **code skeleton** of the repository: the Python uv workspace with the two
-backend services, the Vue frontend, and the hygiene tooling (pre-commit, `no-latest`, Renovate,
+WP01 creates the **code skeleton** of the repository: the two backend services as independent
+uv projects ([ADR-0004](../.docs/adr/0004-per-service-python-projects.md)), the Vue frontend, and the hygiene tooling (pre-commit, `no-latest`, Renovate,
 editor settings). It writes no business logic. Its value is that from the first real story on,
 every contributor — human or AI — lands in a codebase where:
 
@@ -260,7 +260,7 @@ every contributor — human or AI — lands in a codebase where:
 
 | Problem without WP01 | How WP01 solves it |
 | -------------------- | ------------------ |
-| Each contributor sets up tools differently | One root configuration per ecosystem, shared by all packages |
+| Each contributor sets up tools differently | One configuration per subproject, identical across services and checked for drift |
 | Architecture erodes silently (domain importing SQLAlchemy, office engine importing Vue) | import-linter and eslint-plugin-boundaries fail the build |
 | Floating versions creep in (`latest`, `^1.2.0`) | Exact pins + `no-latest` script + `save-exact` |
 | Style debates in reviews | ruff, Prettier, ESLint, mypy, vue-tsc are the arbiters |
@@ -270,12 +270,13 @@ every contributor — human or AI — lands in a codebase where:
 
 **In scope**
 
-- Root `pyproject.toml` as uv workspace (`members = ["services/*"]`) and `uv.lock`.
+- The per-service project layout (ADR-0004): no Python manifest at the repository root.
+- `services/<service>/pyproject.toml` and committed `uv.lock` for each service.
 - `services/core` package with the layered tree of BACKEND.md §2 and an app factory.
 - `services/agents-catalog` package with the same conventions and the `catalog/` source tree.
 - `pydantic-settings` based `Settings` classes in both services (env-only, `VO_` prefix).
-- Root tool configuration: ruff (lint + format), mypy strict, pytest (markers, anyio),
-  coverage thresholds, import-linter contracts.
+- Per-service tool configuration, identical in both services: ruff (lint + format), mypy
+  strict, pytest (markers, anyio), coverage thresholds, import-linter contracts.
 - `frontend/` Vue + Vite + TS skeleton with the folder layout of FRONTEND.md §1.
 - Strict `tsconfig`, ESLint flat config with Vue, TS, boundaries and restricted imports
   (incl. the no-audio rule), Prettier, Vitest with jsdom and coverage.
@@ -301,11 +302,10 @@ every contributor — human or AI — lands in a codebase where:
 
 ```
 virtual-office/
-├── pyproject.toml           # uv workspace + shared tool config (ruff, mypy, pytest, coverage, importlinter)
-├── uv.lock
+├── docker-compose.yml · Makefile   # added in WP02
 ├── services/
-│   ├── core/                # virtual-office-core → src/virtual_office/{domain,application,agents,infrastructure,api}
-│   └── agents-catalog/      # virtual-office-agents-catalog → src/agents_catalog/{domain,application,infrastructure,api}
+│   ├── core/                # pyproject.toml + uv.lock + tool config; virtual-office-core → src/virtual_office/{domain,application,agents,infrastructure,api}
+│   └── agents-catalog/      # pyproject.toml + uv.lock + tool config; virtual-office-agents-catalog → src/agents_catalog/{domain,application,infrastructure,api}
 ├── frontend/                # Vue + Vite + TS; src/{api,stores,composables,ui-amiga,windows,office-engine,office-renderer,assets,shared}
 ├── scripts/                 # check_no_latest.py (+ fixtures), later check_palette.py
 ├── .pre-commit-config.yaml · renovate.json · .editorconfig · .gitignore · .env.example
@@ -314,8 +314,9 @@ virtual-office/
 
 Key decisions applied (no new decisions are taken in WP01):
 
-1. **One lockfile per ecosystem** (uv workspace, pnpm in `frontend/`), committed.
-2. **Configuration at the root** for Python tools; services extend, never redefine.
+1. **One lockfile per subproject** (`services/core`, `services/agents-catalog`, `frontend/`),
+   committed; each subproject is its own Docker build context (ADR-0004).
+2. **Identical tool configuration per service**, enforced by a drift check, not by review.
 3. **Settings are env-only** from day one (twelve-factor III) and fail fast on missing values.
 4. **Boundaries before code:** the contracts exist while the packages are still empty, so the
    first violating import ever written fails.
@@ -326,13 +327,13 @@ Key decisions applied (no new decisions are taken in WP01):
 
 ##### D01.1 — Python workspace
 
-- **Objective:** a uv workspace containing the `core` and `agents-catalog` packages in `src/`
-  layout, with ruff, mypy strict, pytest and import-linter configured once at the root and
+- **Objective:** the `core` and `agents-catalog` services as independent uv projects in `src/`
+  layout, each with ruff, mypy strict, pytest and import-linter configured identically and
   passing on the skeleton.
 - **Contents:**
-  - root `pyproject.toml` with `[tool.uv.workspace]`, `[dependency-groups] dev`, and the tool
-    sections `ruff`, `ruff.lint`, `ruff.format`, `mypy`, `pytest.ini_options`, `coverage`,
-    `importlinter`;
+  - in each service `pyproject.toml`: `[dependency-groups] dev`, `[tool.uv] required-version`
+    and the tool sections `ruff`, `ruff.lint`, `ruff.format`, `mypy`, `pytest.ini_options`,
+    `coverage`, `importlinter`, plus a committed `uv.lock`;
   - `services/core/pyproject.toml` (`virtual-office-core`), `src/virtual_office/` tree:
     `domain/{shared,kanban,staff,intake,decisions}`, `application/`, `agents/`,
     `infrastructure/`, `api/`, `settings.py`, `main.py`;
@@ -343,7 +344,7 @@ Key decisions applied (no new decisions are taken in WP01):
   - negative fixtures for ruff (T20), mypy (untyped def), import-linter (domain → sqlalchemy).
 - **Interfaces exposed:** `virtual_office.main:app`, `agents_catalog.main:app` (ASGI apps used
   by WP02 images).
-- **Acceptance evidence:** in the dev container, `uv sync --frozen`, `ruff check`,
+- **Acceptance evidence:** in each service's dev container, `uv sync --frozen`, `ruff check`,
   `ruff format --check`, `mypy`, `pytest`, `lint-imports` all exit 0; each negative fixture
   makes its tool exit non-zero (captured in the PR description).
 - **Quality criteria:** no dependency outside STACK.md; all direct deps `==` pinned;
@@ -405,7 +406,7 @@ Key decisions applied (no new decisions are taken in WP01):
 ##### Verification procedure (all deliverables)
 
 1. Start from a fresh clone; no tool is installed on the host besides Docker.
-2. Run the Python checks in the pinned Python image: `uv sync --frozen`, `ruff check`,
+2. Run the Python checks per service, from its folder, in the pinned Python image: `uv sync --frozen`, `ruff check`,
    `ruff format --check`, `mypy`, `lint-imports`, `pytest`.
 3. Run the frontend checks in the pinned Node image: `pnpm install --frozen-lockfile`,
    `pnpm lint`, `pnpm format:check`, `pnpm typecheck`, `pnpm test`, `pnpm build`.
@@ -428,9 +429,9 @@ Key decisions applied (no new decisions are taken in WP01):
 
 | File | Key settings that MUST be present |
 | ---- | --------------------------------- |
-| root `pyproject.toml` `[tool.ruff]` | `line-length = 100`, `target-version` = runtime minor, `src = ["services/*/src"]` |
+| service `pyproject.toml` `[tool.ruff]` | `line-length = 100`, `target-version` = runtime minor, `src = ["src", "tests"]` |
 | `[tool.ruff.lint]` | `select` = rule sets of BACKEND.md §3; per-file ignores only for tests (`S101`) |
-| `[tool.mypy]` | `strict = true`, `plugins = ["pydantic.mypy"]`, `warn_unreachable = true`, `files` = both services |
+| `[tool.mypy]` | `strict = true`, `plugins = ["pydantic.mypy"]`, `warn_unreachable = true`, `files = ["src", "tests"]` |
 | `[tool.pytest.ini_options]` | `markers = ["integration", "eval", "tooling"]`, `addopts = "-m 'not integration and not eval and not tooling'"`, anyio backend `asyncio` |
 | `[tool.coverage]` | `branch = true`, source per package, `fail_under` per run |
 | `[tool.importlinter]` | the three contracts of BACKEND.md §2.1 for `core`, the layers contract for `agents-catalog` |
@@ -453,7 +454,7 @@ Key decisions applied (no new decisions are taken in WP01):
 
 | Story | Title | Deliverable | Points | Depends on |
 | ----- | ----- | ----------- | ------ | ---------- |
-| US-01.01 | Create the uv workspace root | D01.1 | 2 | — |
+| US-01.01 | Record the per-service Python project layout | D01.1 | 2 | — |
 | US-01.02 | Scaffold the `core` service package | D01.1 | 3 | US-01.01 |
 | US-01.03 | Scaffold the `agents-catalog` service package | D01.1 | 2 | US-01.01 |
 | US-01.04 | Configure quality tools and architecture contracts | D01.1 | 3 | US-01.02, US-01.03 |
@@ -468,11 +469,11 @@ Key decisions applied (no new decisions are taken in WP01):
 
 | Artifact | Path | Consumed by |
 | -------- | ---- | ----------- |
-| Workspace manifest + lock | `pyproject.toml`, `uv.lock` | WP02 Python images, WP03 CI |
+| Service manifests + locks | `services/*/pyproject.toml`, `services/*/uv.lock` | WP02 Python images, WP03 CI |
 | Core ASGI app | `services/core/src/virtual_office/main.py` | WP02, every backend WP |
 | Catalog ASGI app | `services/agents-catalog/src/agents_catalog/main.py` | WP02, WP09, WP15 |
 | Frontend app | `frontend/` | WP02 image, WP07, WP08 |
-| Lint/format/type configs | root `pyproject.toml`, `frontend/eslint.config.ts`, `tsconfig.*` | everyone |
+| Lint/format/type configs | `services/*/pyproject.toml`, `frontend/eslint.config.ts`, `tsconfig.*` | everyone |
 | Boundary contracts | `[tool.importlinter]`, ESLint boundaries config | WP03 CI, every WP |
 | `no-latest` script | `scripts/check_no_latest.py` | pre-commit, WP03 CI |
 | Renovate config | `renovate.json` | dependency updates for the whole project |
@@ -582,10 +583,12 @@ containers everybody else uses.
 
 - `services/core/Dockerfile`, `services/agents-catalog/Dockerfile`, `frontend/Dockerfile`, each
   with `runtime` and `dev` targets, following DOCKER.md §4.
-- Root `.dockerignore` and per-context ignores.
+- A `.dockerignore` in every build context (`frontend/`, `services/core/`,
+  `services/agents-catalog/`); each subproject is its own build context (ADR-0004).
 - `frontend/nginx.conf`: SPA fallback, `/healthz`, reverse proxy for `/api` and `/ws`, cache
   headers, security headers, JSON access logs.
-- `compose.yaml` (base), `compose.dev.yaml` (live sync), `compose.gpu.yaml` (NVIDIA).
+- `docker-compose.yml` (base), `docker-compose.dev.yml` (live sync), `docker-compose.gpu.yml` (NVIDIA).
+- Root `Makefile` wrapping `docker compose`: `help` (default goal), `up`, `down`, `logs`, `status`.
 - One-off jobs: `migrate-core`, `migrate-catalog`, `catalog-seed`, `ollama-init`,
   `rebuild-projections` (profile `admin`), `backup` (profile `backup`) — as wiring; their real
   logic arrives in later WPs.
@@ -654,7 +657,7 @@ exceptions (`postgres`, `ollama` writable data dirs) are commented in the file.
 - **Objective:** multi-stage, non-root, digest-pinned images for `frontend`, `core` and
   `agents-catalog`, each with a minimal `runtime` target and a `dev` target with tooling.
 - **Contents:**
-  - Python Dockerfiles: `base` (env, user 10001), `deps` (uv sync without workspace sources),
+  - Python Dockerfiles (context = service folder): `base` (env, user 10001), `deps` (uv sync without project sources),
     `build` (sources), `runtime` (venv only), `dev` (all groups, reload); uv binary copied from
     the pinned `ghcr.io/astral-sh/uv` image; BuildKit cache mounts; OCI labels with `VCS_REF`.
   - Frontend Dockerfile: `deps` (pnpm via Corepack, frozen lockfile), `build` (`pnpm build`),
@@ -680,7 +683,7 @@ exceptions (`postgres`, `ollama` writable data dirs) are commented in the file.
 
 ##### D02.2 — Compose stack
 
-- **Objective:** `compose.yaml`, `compose.dev.yaml` and `compose.gpu.yaml` that start the whole
+- **Objective:** `docker-compose.yml`, `docker-compose.dev.yml` and `docker-compose.gpu.yml` that start the whole
   system securely and reproducibly, following DOCKER.md §5.
 - **Contents:**
   - `name: virtual-office`, no `version:` key, `x-app-defaults` anchor;
@@ -690,8 +693,10 @@ exceptions (`postgres`, `ollama` writable data dirs) are commented in the file.
   - required variables with `${VAR:?}`; only `frontend` published on `127.0.0.1:8080`;
   - dev overlay with `develop.watch` (`sync` sources, `rebuild` on lockfiles), Vite on
     `127.0.0.1:5173`, Postgres on `127.0.0.1:5432`, debug logs;
-  - GPU overlay reserving NVIDIA devices for `ollama`.
-- **Interfaces exposed:** the commands of DOCKER.md §6 (up, watch, run jobs, profiles).
+  - GPU overlay reserving NVIDIA devices for `ollama`;
+  - root `Makefile`: `make` prints the help; `up`, `down`, `logs`, `status` wrap
+    `docker compose` (DOCKER.md §6).
+- **Interfaces exposed:** the commands and `make` targets of DOCKER.md §6 (up, watch, run jobs, profiles).
 - **Verification steps:**
   1. `docker compose config` for base, base+dev, base+gpu → valid.
   2. Remove a required variable → config fails naming it.
@@ -781,7 +786,8 @@ exceptions (`postgres`, `ollama` writable data dirs) are commented in the file.
 | -------- | ---- | ----------- |
 | Dockerfiles | `services/*/Dockerfile`, `frontend/Dockerfile` | WP03 CI, every developer |
 | nginx config | `frontend/nginx.conf` | runtime frontend image |
-| Compose files | `compose*.yaml` | everyone, CI |
+| Compose files | `docker-compose*.yml` | everyone, CI |
+| Makefile | `Makefile` (help, up, down, logs, status) | everyone |
 | Postgres init | `infra/postgres/initdb/` | WP04 migrations |
 | Model lock | `infra/ollama/models.lock` | `ollama-init`, WP15 agents |
 | Smoke and image checks | `infra/tests/` | WP03 CI |
@@ -905,7 +911,7 @@ development safe.
   `contracts` (OpenAPI drift + palette).
 - Caches: BuildKit (GitHub Actions cache backend), pnpm store, uv cache.
 - `docker-bake.hcl` mirroring compose services.
-- `compose.ci.yaml` override (fake LLM, no Ollama pull).
+- `docker-compose.ci.yml` override (fake LLM, no Ollama pull).
 - Coverage thresholds enforced and published to job summaries.
 - `.github/BRANCH_PROTECTION.md` documenting required checks.
 - Every action pinned by full commit SHA with a version comment.
@@ -1005,7 +1011,7 @@ flowchart LR
 
 - **Objective:** CI starts the real stack with the fake LLM and verifies it end to end.
 - **Contents:**
-  - `compose.ci.yaml` setting `VO_LLM_MODE=fake` and removing the `ollama-init` dependency;
+  - `docker-compose.ci.yml` setting `VO_LLM_MODE=fake` and removing the `ollama-init` dependency;
   - `smoke` job: `docker compose up -d` with built images, wait for health (≤ 120 s), run
     `infra/tests/smoke.sh`, always collect `docker compose logs` as an artifact on failure.
 - **Verification steps:**
@@ -1053,7 +1059,7 @@ flowchart LR
 | `frontend-checks` | PR, main | `frontend-deps` | eslint, prettier, vue-tsc, vitest + coverage | 15 min | coverage XML |
 | `images` | PR (amd64), main/nightly (multi-arch) | buildx | bake all targets, `check_images.sh` | 30 min | image digests list |
 | `scan` | after `images` | pinned Trivy | scan runtime images | 10 min | Trivy report |
-| `smoke` | after `images` | runner + compose | up with `compose.ci.yaml`, wait healthy, `smoke.sh` | 10 min | compose logs on failure |
+| `smoke` | after `images` | runner + compose | up with `docker-compose.ci.yml`, wait healthy, `smoke.sh` | 10 min | compose logs on failure |
 | `contracts` | PR, main | `core-dev` + `frontend-deps` | export OpenAPI, regenerate types, diff; palette check | 10 min | OpenAPI diff |
 | `nightly-evals` | nightly | compose with Ollama | pull locked models, run `-m eval` (placeholder until WP15) | 120 min | eval results |
 
@@ -1096,7 +1102,7 @@ Rules for every job:
 | PR workflow | `.github/workflows/pr.yml` | every PR |
 | Main and nightly workflows | `.github/workflows/main.yml`, `nightly.yml` | `main`, nightly evals |
 | Bake file | `docker-bake.hcl` | CI and local multi-arch builds |
-| CI compose override | `compose.ci.yaml` | smoke and E2E jobs |
+| CI compose override | `docker-compose.ci.yml` | smoke and E2E jobs |
 | Palette checker | `scripts/check_palette.py` | CI, WP07, WP12 |
 | OpenAPI exporter | `python -m virtual_office.api.export_openapi` | CI, WP06 type generation |
 | Branch protection doc | `.github/BRANCH_PROTECTION.md` | repository admins |
@@ -1162,7 +1168,7 @@ Rules for every job:
 - Every WP adds its tests to the existing jobs; no WP creates a new required job without
   updating `.github/BRANCH_PROTECTION.md`.
 - WP06 fills the OpenAPI contract; WP07 fills visual regression; WP08 introduces the `e2e`
-  job (Playwright against `compose.ci.yaml`).
+  job (Playwright against `docker-compose.ci.yml`).
 
 #### 5.3.17 Open questions
 
@@ -2638,7 +2644,7 @@ Drop mapping (column pair → command):
   creation, card creation, E1, E3 via API helper, E4, happy path to DONE with manual review,
   two-tab live update); traces and videos on failure; `e2e` CI job required.
 - **Interfaces exposed:** E2E fixtures reused by all later WPs.
-- **Verification steps:** run in CI against `compose.ci.yaml`; inject a UI bug → job fails.
+- **Verification steps:** run in CI against `docker-compose.ci.yml`; inject a UI bug → job fails.
 - **Acceptance evidence:** CI runs.
 - **Quality criteria:** suite < 8 min; zero known flaky tests.
 - **Deliverable DoD:**
@@ -6219,7 +6225,7 @@ rules:
 | Isolation ADR | `.docs/adr/NNNN-command-isolation.md` | all WPs using commands |
 | Workspace ports/adapters | `virtual_office/infrastructure/workspace/` | WP20, WP22 |
 | Security suite | `services/core/tests/security/` | CI, nightly |
-| Compose mount | `compose.yaml` (`core` volumes) | operators |
+| Compose mount | `docker-compose.yml` (`core` volumes) | operators |
 
 #### 10.1.9 Expected ADRs
 
