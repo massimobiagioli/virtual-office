@@ -20,10 +20,10 @@ for a role.
 | Volume          | `ollama-models:/root/.ollama` (model blobs survive rebuilds) |
 | Healthcheck     | `["CMD", "ollama", "list"]` (the image has no curl/wget), interval 15 s, start period 30 s |
 | Restart         | `unless-stopped` |
-| GPU             | Only through `compose.gpu.yaml` (NVIDIA). CPU is the default |
+| GPU             | Only through `docker-compose.gpu.yml` (NVIDIA). CPU is the default |
 | Security        | `no-new-privileges`, `cap_drop: [ALL]`; `read_only` is **not** set (Ollama writes runtime files) — documented exception |
 
-### 1.1 Server environment variables (set in `compose.yaml`)
+### 1.1 Server environment variables (set in `docker-compose.yml`)
 
 | Variable                   | Value     | Why |
 | -------------------------- | --------- | --- |
@@ -34,7 +34,7 @@ for a role.
 | `OLLAMA_CONTEXT_LENGTH`    | `32768`   | Enough for context packs; raising it costs memory |
 | `OLLAMA_NOHISTORY`         | `1`       | No interactive history files |
 
-Changes to these values are made in `compose.yaml` only, with a note in the PR on memory impact.
+Changes to these values are made in `docker-compose.yml` only, with a note in the PR on memory impact.
 
 ---
 
@@ -141,7 +141,7 @@ Changes to these values are made in `compose.yaml` only, with a note in the PR o
 
 | Platform                 | Recommendation |
 | ------------------------ | -------------- |
-| Linux + NVIDIA GPU       | `compose.gpu.yaml` overlay (best experience) |
+| Linux + NVIDIA GPU       | `docker-compose.gpu.yml` overlay (best experience) |
 | Linux / Windows CPU only | Works; expect slow agents — prefer smaller default models via Preferences |
 | macOS (Apple Silicon)    | Docker cannot access the Apple GPU, so the container runs on CPU. Allowed alternative: run Ollama natively on the host and set `VO_OLLAMA_BASE_URL=http://host.docker.internal:11434/` — the `ollama` container then stays stopped (profile override). The same `models.lock` must be pulled on the host |
 

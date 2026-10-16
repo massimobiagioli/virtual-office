@@ -11,20 +11,23 @@ file never repeats them.
 
 ---
 
-## 1. Workspace and project files
+## 1. Service projects
+
+Each service is an **independent uv project**; there is no Python manifest at the repository
+root ([ADR-0004](adr/0004-per-service-python-projects.md)).
 
 ```
-pyproject.toml                    # uv workspace root: members = ["services/*"], shared tool config
-uv.lock                           # single lockfile for the workspace (committed)
 services/
-├── core/
-│   ├── pyproject.toml            # name = "virtual-office-core"
+├── core/                         # Docker build context of the core image
+│   ├── pyproject.toml            # name = "virtual-office-core", deps, dev group, tool config
+│   ├── uv.lock                   # committed
 │   ├── Dockerfile
 │   ├── alembic.ini · alembic/
 │   ├── src/virtual_office/       # import package
 │   └── tests/
-└── agents-catalog/
-    ├── pyproject.toml            # name = "virtual-office-agents-catalog"
+└── agents-catalog/               # Docker build context of the agents-catalog image
+    ├── pyproject.toml            # name = "virtual-office-agents-catalog", same tool config
+    ├── uv.lock                   # committed
     ├── Dockerfile
     ├── alembic.ini · alembic/
     ├── catalog/                  # source definitions (YAML, Markdown prompts, evals)
@@ -37,11 +40,14 @@ Rules:
 1. **`src/` layout** for every service; tests live outside the package.
 2. Direct dependencies pinned with `==` in the service `pyproject.toml`; dev tools in a
    `[dependency-groups] dev` group. Never add a dependency without updating STACK.md.
-3. Tool configuration (`ruff`, `mypy`, `pytest`, `coverage`, `importlinter`) lives in the
-   **root** `pyproject.toml` so both services share it; services may only *extend* it.
+3. Tool configuration (`ruff`, `mypy`, `pytest`, `coverage`, `importlinter`) lives in each
+   service `pyproject.toml` and is **identical** in both services except for package names
+   and paths; a tooling check fails on drift. `[tool.uv] required-version` pins the STACK.md
+   uv version.
 4. `requires-python` is the exact minor of the runtime in STACK.md (e.g. `">=3.15,<3.16"`).
-5. All commands run inside containers (see [DOCKER.md](DOCKER.md)); the host has no Python
-   toolchain requirement.
+5. All commands run inside the service container (see [DOCKER.md](DOCKER.md)), from the
+   service folder (`uv sync --frozen`, `uv lock --check`); the host has no Python toolchain
+   requirement.
 
 ---
 
