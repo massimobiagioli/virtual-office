@@ -1,0 +1,64 @@
+# Virtual Office — files that must never be committed.
+# Lockfiles (uv.lock, pnpm-lock.yaml, infra/ollama/models.lock) and Playwright
+# visual baselines (*-snapshots/) ARE committed: do not add them here.
+
+# --- Environment and secrets (Twelve-Factor: config via env vars only) ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# --- Local delivery tracking (work package files and review notes) ---
+.project/execution/
+
+# --- Python (uv workspace: services/*) ---
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+.hypothesis/
+.import_linter_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+
+# --- Node / frontend (pnpm, Vite, Vitest, vue-tsc) ---
+node_modules/
+.pnpm-store/
+frontend/dist/
+*.tsbuildinfo
+.vite/
+.eslintcache
+coverage/
+*.local
+
+# --- Playwright (e2e/) ---
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+
+# --- Logs and local data ---
+*.log
+npm-debug.log*
+pnpm-debug.log*
+*.dump
+
+# --- Editors and OS ---
+.idea/
+.vscode/
+*.swp
+*~
+.DS_Store
+Thumbs.db
+
+# --- Claude Code: personal settings only (commands are shared) ---
+.claude/settings.local.json
