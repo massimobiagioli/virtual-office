@@ -3,39 +3,35 @@ from pydantic import ValidationError
 
 from virtual_office.settings import Settings
 
-REQUIRED = ("VO_DATABASE_URL", "VO_CATALOG_URL", "VO_OLLAMA_BASE_URL")
 
-
-@pytest.fixture(autouse=True)
-def clean_environment(monkeypatch: pytest.MonkeyPatch) -> None:
-    for name in (*REQUIRED, "VO_LOG_LEVEL"):
-        monkeypatch.delenv(name, raising=False)
-
-
+@pytest.mark.usefixtures("no_core_environment")
 def test_missing_variables_are_named_in_the_error() -> None:
     with pytest.raises(ValidationError) as error:
         Settings()
 
     message = str(error.value)
-    for name in REQUIRED:
+    for name in ("VO_DATABASE_URL", "VO_CATALOG_URL", "VO_OLLAMA_BASE_URL"):
         assert name in message
 
 
-def test_settings_load_from_vo_prefixed_variables(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("VO_DATABASE_URL", "postgresql+asyncpg://core_app@postgres:5432/core")
-    monkeypatch.setenv("VO_CATALOG_URL", "http://agents-catalog:8001/")
-    monkeypatch.setenv("VO_OLLAMA_BASE_URL", "http://ollama:11434/")
-
+def test_settings_load_from_vo_prefixed_variables(core_environment: dict[str, str]) -> None:
     settings = Settings()
 
-    assert str(settings.catalog_url) == "http://agents-catalog:8001/"
+    assert str(settings.database_url) == core_environment["VO_DATABASE_URL"]
+    assert str(settings.catalog_url) == core_environment["VO_CATALOG_URL"]
+    assert str(settings.ollama_base_url) == core_environment["VO_OLLAMA_BASE_URL"]
     assert settings.log_level == "INFO"
 
 
-def test_settings_are_frozen(monkeypatch: pytest.MonkeyPatch) -> None:
-    for name in REQUIRED:
-        monkeypatch.setenv(name, "http://example.test/")
-    monkeypatch.setenv("VO_DATABASE_URL", "postgresql+asyncpg://core_app@postgres:5432/core")
+@pytest.mark.usefixtures("core_environment")
+def test_optional_log_level_is_read_from_the_environment(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("VO_LOG_LEVEL", "DEBUG")
+
+    assert Settings().log_level == "DEBUG"
+
+
+@pytest.mark.usefixtures("core_environment")
+def test_settings_are_frozen() -> None:
     settings = Settings()
 
     with pytest.raises(ValidationError):
