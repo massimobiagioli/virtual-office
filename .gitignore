@@ -9,9 +9,6 @@
 *.pem
 *.key
 
-# --- Local delivery tracking (work package files and review notes) ---
-.project/execution/
-
 # --- Python (uv workspace: services/*) ---
 .venv/
 __pycache__/
