@@ -12,6 +12,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "anyio==4.15.1",
     "hypothesis==6.170.1",
     "import-linter==2.15",
     "mypy==2.4.0",
@@ -30,7 +31,82 @@ required-version = "==0.13.1"
 [tool.uv.build-backend]
 module-name = "catalog"
 
-# Minimal test runner settings; the full tool configuration arrives in US-01.04.
+# Tool configuration: identical in every service except package names (BACKEND.md §1 rule 3,
+# checked by scripts/check_service_config_drift.py); import-linter contracts differ by design.
+
+[tool.ruff]
+line-length = 100
+target-version = "py315"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+# BACKEND.md §3 rule sets.
+select = [
+    "E", "W", "F", "I", "B", "UP", "SIM", "RUF", "N", "ASYNC", "S", "PT", "PL", "C4", "DTZ",
+    "T20", "ERA", "TRY", "PERF", "FURB",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101"]
+# The tooling tests run the quality tools on purpose (trusted, fixed arguments).
+"tests/tooling/**" = ["S101", "S603"]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.mypy]
+strict = true
+plugins = ["pydantic.mypy"]
+warn_unreachable = true
+files = ["src", "tests"]
+
+[tool.pydantic-mypy]
+# init_typed stays off: settings and DTOs are built from strings that pydantic parses (URLs).
+init_forbid_extra = true
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = ["--import-mode=importlib", "--strict-markers"]
+markers = [
+    "integration: needs real backing services (testcontainers Postgres)",
+    "eval: runs a role evaluation dataset",
+    "tooling: runs the quality tools against negative fixtures",
+]
+addopts = [
+    "--import-mode=importlib",
+    "--strict-markers",
+    "-m",
+    "not integration and not eval and not tooling",
+]
+
+[tool.coverage.run]
+branch = true
+source_pkgs = ["catalog"]
+
+[tool.coverage.report]
+# Global floor ("others ≥ 70 %", Constitution §18.2); per-layer thresholds (domain 95,
+# application 90) are enforced on the JSON report by scripts/check_coverage.py.
+fail_under = 70
+show_missing = true
+skip_empty = true
+
+[tool.coverage.json]
+output = "coverage.json"
+
+[tool.importlinter]
+root_packages = ["catalog"]
+include_external_packages = true
+
+[[tool.importlinter.contracts]]
+name = "Hexagonal layers"
+type = "layers"
+layers = [
+    "catalog.api | catalog.infrastructure",
+    "catalog.application",
+    "catalog.domain",
+]
+
+[[tool.importlinter.contracts]]
+name = "Domain is pure"
+type = "forbidden"
+source_modules = ["catalog.domain"]
+forbidden_modules = ["fastapi", "sqlalchemy", "asyncpg", "pydantic_ai", "httpx", "structlog"]

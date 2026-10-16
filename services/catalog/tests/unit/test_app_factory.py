@@ -1,5 +1,3 @@
-import asyncio
-
 import pytest
 from fastapi import FastAPI
 from fastapi.routing import APIRoute
@@ -28,15 +26,13 @@ def test_app_factory_reads_settings_from_the_environment(settings: Settings) -> 
     assert app.state.settings == settings
 
 
-def test_app_lifespan_starts_and_stops(settings: Settings) -> None:
+@pytest.mark.anyio
+async def test_app_lifespan_starts_and_stops(settings: Settings) -> None:
     app = create_app(settings)
     phases: list[str] = []
 
-    async def run_lifespan() -> None:
-        async with app.router.lifespan_context(app):
-            phases.append("running")
-        phases.append("stopped")
-
-    asyncio.run(run_lifespan())
+    async with app.router.lifespan_context(app):
+        phases.append("running")
+    phases.append("stopped")
 
     assert phases == ["running", "stopped"]
