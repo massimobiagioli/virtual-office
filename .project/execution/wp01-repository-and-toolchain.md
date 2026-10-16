@@ -116,17 +116,19 @@ Renovate configuration, `.env.example`, `.gitignore`, `.editorconfig`.
 - **Story:** As a backend developer, I want the `agents-catalog` package with the same
   conventions as `core`, so that both services look identical.
 - **Acceptance criteria:**
-  - [ ] AC1 — Given `services/agents-catalog/src/agents_catalog/`, when listed, then it contains
+  - [x] AC1 — Given `services/agents-catalog/src/agents_catalog/`, when listed, then it contains
     `domain/`, `application/`, `infrastructure/`, `api/`, `settings.py`, `main.py`.
-  - [ ] AC2 — Given `services/agents-catalog/catalog/`, when listed, then it contains `roles/`,
+  - [x] AC2 — Given `services/agents-catalog/catalog/`, when listed, then it contains `roles/`,
     `prompts/`, `characters/`, `evals/` (each with a `.gitkeep`).
-  - [ ] AC3 — Given the package, when `pytest` runs, then the app-factory smoke test passes.
-  - [ ] AC4 — Given `services/agents-catalog/pyproject.toml` and its `uv.lock`, when inspected, then
+  - [x] AC3 — Given the package, when `pytest` runs, then the app-factory smoke test passes.
+  - [x] AC4 — Given `services/agents-catalog/pyproject.toml` and its `uv.lock`, when inspected, then
     the pinning rules of US-01.02 AC5 hold and `uv sync --frozen` succeeds in the container.
-  - [ ] AC5 — Given `services/agents-catalog/Dockerfile` and the `agents-catalog` service in
+  - [x] AC5 — Given `services/agents-catalog/Dockerfile` and the `agents-catalog` service in
     `docker-compose.yml` (`build.context: services/agents-catalog`), when `make up` runs, then
     `make status` shows it running next to `core`.
-- **Tasks:** mirror US-01.02 for the catalog service (own `pyproject.toml` + `uv.lock`).
+- **Tasks:**
+  - [x] Mirror US-01.02 for the catalog service (own `pyproject.toml` + `uv.lock`, package, catalog
+    folders, `Dockerfile`, compose service).
 - **Tests:** unit smoke test.
 - **Done when:** `pytest` green for `agents-catalog`.
 
