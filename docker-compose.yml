@@ -1,0 +1,6 @@
+# Virtual Office stack (Compose Specification, no `version:` key). Drive it with `make`.
+# Each subproject adds its own service here, built from its own folder (ADR-0004):
+# core (US-01.02), agents-catalog (US-01.03), frontend (US-01.05); WP02 hardens the stack.
+name: virtual-office
+
+services: {}
