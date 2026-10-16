@@ -328,3 +328,64 @@ None open.
 - ADR-0007's compliance grep also matches this review file's history; harmless.
 - US-01.04 must configure coverage with `source_pkgs = ["catalog"]` or a path, not a bare
   `catalog` source.
+
+## US-01.04 — Configure quality tools and architecture contracts
+
+### Round 1 · 2026-10-16 · branch `feat/us-01-04-quality-tools-and-contracts` · head `3ddb41d`
+
+**Verdict:** CHANGES REQUESTED
+
+**Quality gate**
+
+Run in a throwaway container from the pinned `python:3.15.0-slim-trixie` + `uv 0.13.1` images
+(repository mounted) and in the `dev` targets of both service Dockerfiles.
+
+| Gate | Result |
+| ---- | ------ |
+| `uv lock --check`, `uv sync --frozen` (core, catalog; `anyio==4.15.1` added to dev) | pass |
+| ruff check (BACKEND.md §3 rule sets), ruff format --check — core, catalog, scripts | pass |
+| mypy (strict, pydantic plugin, `warn_unreachable`) — core 19 files, catalog 13, scripts 7 | pass |
+| lint-imports — core 3 contracts kept, catalog 2 kept | pass |
+| pytest (default selection) — core 19, catalog 19 | pass; coverage 100 %, `fail_under = 70` reached |
+| pytest `-m tooling` — core 7, catalog 7 (T201, no-untyped-def, pydantic call-arg, domain → sqlalchemy) | pass (each fixture rejected by its tool) |
+| pytest `scripts/tests` | 20 passed |
+| `python -I scripts/check_python_pins.py`, `check_service_config_drift.py` on the repository | exit 0 |
+| `python -I scripts/check_coverage.py` on both services' JSON reports | exit 0 |
+| `make up` / `make status` / `make down` | pass |
+| `no-latest` script | not available (US-01.09); manual grep in the diff: 0 hits |
+| frontend gates, healthcheck, Playwright | not available (US-01.05+, WP02, WP14+) |
+
+**Acceptance**
+
+- AC1 — `[tool.ruff.lint] select` = BACKEND.md §3 (`services/*/pyproject.toml`);
+  `test_ruff_rejects_a_print_call` asserts T201.
+- AC2 — `strict = true`, `plugins = ["pydantic.mypy"]`; `test_mypy_rejects_an_untyped_function`,
+  `test_mypy_checks_pydantic_models_with_the_plugin` (fails only with the plugin).
+- AC3 — BACKEND.md §2.1 contracts; `test_lint_imports_rejects_a_domain_module_importing_sqlalchemy`
+  copies `src/` to a temp folder, adds the import, expects the broken contract; the clean
+  service passes.
+- AC4 — `branch = true`, `fail_under = 70`; domain 95 / application 90 / others 70 in
+  `scripts/check_coverage.py` with tests per threshold.
+- AC5 — `scripts/check_service_config_drift.py` + 5 tests (differing, missing, hard-coded
+  package name, repository passes).
+- AC6 — `scripts/check_python_pins.py` + parametrized failures with file and requirement.
+
+**Findings**
+
+- [ ] **R1 · Major** — `scripts/check_coverage.py:41` — when `--package` matches no file of the
+  report (typo, wrong report), every file is skipped and the check exits 0 with no output: the
+  gate passes silently (Constitution §18.2, "a rule that cannot fail is not a rule"). Suggested
+  fix: fail with a message when no file belongs to the package.
+- [ ] **R2 · Minor** — `scripts/check_coverage.py:52` — `round(percent, 1) >= required` lets
+  94.96 % pass the 95 % domain threshold. Suggested fix: compare the unrounded percentage;
+  round only for display.
+
+**Notes**
+
+- `"tests/tooling/**" = ["S101", "S603"]` departs from the ROADMAP config table ("per-file
+  ignores only for tests (S101)"); still test-only and justified (fixed tool arguments). Record
+  it in the story ADR.
+- `init_typed` of the pydantic plugin is left off on purpose (settings take URL strings).
+- `source_pkgs = ["catalog"]` resolves the coverage caveat of ADR-0007.
+- The scripts are not yet run by anything automatic: pre-commit (US-01.10) and CI (WP03)
+  must call them.
