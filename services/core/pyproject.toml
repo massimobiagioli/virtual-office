@@ -1,0 +1,36 @@
+[project]
+name = "virtual-office-core"
+version = "0.1.0"
+description = "Virtual Office core service: domain, application, agent runtime, API and event store."
+requires-python = ">=3.15,<3.16"
+dependencies = [
+    "fastapi==0.143.3",
+    "pydantic==2.14.1",
+    "pydantic-settings==2.16.0",
+    "uvicorn[standard]==0.54.0",
+]
+
+[dependency-groups]
+dev = [
+    "hypothesis==6.170.1",
+    "import-linter==2.15",
+    "mypy==2.4.0",
+    "pytest==9.1.1",
+    "pytest-cov==7.1.0",
+    "ruff==0.17.1",
+]
+
+[build-system]
+requires = ["uv_build==0.13.1"]
+build-backend = "uv_build"
+
+[tool.uv]
+required-version = "==0.13.1"
+
+[tool.uv.build-backend]
+module-name = "virtual_office"
+
+# Minimal test runner settings; the full tool configuration arrives in US-01.04.
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = ["--import-mode=importlib", "--strict-markers"]
