@@ -270,6 +270,10 @@ every contributor — human or AI — lands in a codebase where:
 
 **In scope**
 
+- Root `docker-compose.yml` and `Makefile` (`help` default goal, `up`, `down`, `logs`, `status`)
+  from the first story ([ADR-0005](../.docs/adr/0005-us-01-01-root-compose-and-makefile-first.md)).
+- One `Dockerfile` + `.dockerignore` per subproject and its service in `docker-compose.yml`,
+  added by the story that scaffolds the subproject (US-01.02, US-01.03, US-01.05).
 - The per-service project layout (ADR-0004): no Python manifest at the repository root.
 - `services/<service>/pyproject.toml` and committed `uv.lock` for each service.
 - `services/core` package with the layered tree of BACKEND.md §2 and an app factory.
@@ -286,7 +290,8 @@ every contributor — human or AI — lands in a codebase where:
 
 **Out of scope**
 
-- Dockerfiles, compose files, init scripts (WP02).
+- Compose hardening (healthchecks, security defaults, resource limits), Postgres, Ollama,
+  one-off jobs, dev/GPU overlays, init scripts (WP02).
 - GitHub Actions workflows (WP03) — WP01 only provides the commands CI will call.
 - Any domain, API, UI or agent behavior (WP04+).
 - The Amiga UI kit (WP07), even placeholder components.
@@ -302,7 +307,7 @@ every contributor — human or AI — lands in a codebase where:
 
 ```
 virtual-office/
-├── docker-compose.yml · Makefile   # added in WP02
+├── docker-compose.yml · Makefile   # US-01.01; services added by each scaffold story
 ├── services/
 │   ├── core/                # pyproject.toml + uv.lock + tool config; virtual-office-core → src/virtual_office/{domain,application,agents,infrastructure,api}
 │   └── agents-catalog/      # pyproject.toml + uv.lock + tool config; virtual-office-agents-catalog → src/agents_catalog/{domain,application,infrastructure,api}
@@ -454,7 +459,7 @@ Key decisions applied (no new decisions are taken in WP01):
 
 | Story | Title | Deliverable | Points | Depends on |
 | ----- | ----- | ----------- | ------ | ---------- |
-| US-01.01 | Record the per-service Python project layout | D01.1 | 2 | — |
+| US-01.01 | Root `docker-compose.yml` and `Makefile` | D01.1 | 2 | — |
 | US-01.02 | Scaffold the `core` service package | D01.1 | 3 | US-01.01 |
 | US-01.03 | Scaffold the `agents-catalog` service package | D01.1 | 2 | US-01.01 |
 | US-01.04 | Configure quality tools and architecture contracts | D01.1 | 3 | US-01.02, US-01.03 |
@@ -469,6 +474,8 @@ Key decisions applied (no new decisions are taken in WP01):
 
 | Artifact | Path | Consumed by |
 | -------- | ---- | ----------- |
+| Root orchestration | `docker-compose.yml`, `Makefile` | everyone, WP02 hardening |
+| Subproject images | `services/*/Dockerfile`, `frontend/Dockerfile` | `make up`, WP02 hardening |
 | Service manifests + locks | `services/*/pyproject.toml`, `services/*/uv.lock` | WP02 Python images, WP03 CI |
 | Core ASGI app | `services/core/src/virtual_office/main.py` | WP02, every backend WP |
 | Catalog ASGI app | `services/agents-catalog/src/agents_catalog/main.py` | WP02, WP09, WP15 |
@@ -508,7 +515,7 @@ an unforeseen decision.
 
 #### 5.1.12 Internal sequencing
 
-1. US-01.01 (workspace) → US-01.02 and US-01.03 in parallel → US-01.04 (tool contracts).
+1. US-01.01 (root compose + Makefile) → US-01.02 and US-01.03 in parallel → US-01.04 (tool contracts).
 2. US-01.05 → US-01.06 → US-01.07 (frontend), parallel to step 1.
 3. US-01.08 → US-01.09 → US-01.10 (hygiene) last, because hooks call all tools.
 
@@ -588,7 +595,7 @@ containers everybody else uses.
 - `frontend/nginx.conf`: SPA fallback, `/healthz`, reverse proxy for `/api` and `/ws`, cache
   headers, security headers, JSON access logs.
 - `docker-compose.yml` (base), `docker-compose.dev.yml` (live sync), `docker-compose.gpu.yml` (NVIDIA).
-- Root `Makefile` wrapping `docker compose`: `help` (default goal), `up`, `down`, `logs`, `status`.
+- Root `Makefile` (created in US-01.01): extended only with targets that wrap `docker compose`.
 - One-off jobs: `migrate-core`, `migrate-catalog`, `catalog-seed`, `ollama-init`,
   `rebuild-projections` (profile `admin`), `backup` (profile `backup`) — as wiring; their real
   logic arrives in later WPs.
@@ -694,8 +701,7 @@ exceptions (`postgres`, `ollama` writable data dirs) are commented in the file.
   - dev overlay with `develop.watch` (`sync` sources, `rebuild` on lockfiles), Vite on
     `127.0.0.1:5173`, Postgres on `127.0.0.1:5432`, debug logs;
   - GPU overlay reserving NVIDIA devices for `ollama`;
-  - root `Makefile`: `make` prints the help; `up`, `down`, `logs`, `status` wrap
-    `docker compose` (DOCKER.md §6).
+  - root `Makefile` from US-01.01 kept working against the hardened stack (DOCKER.md §6).
 - **Interfaces exposed:** the commands and `make` targets of DOCKER.md §6 (up, watch, run jobs, profiles).
 - **Verification steps:**
   1. `docker compose config` for base, base+dev, base+gpu → valid.
@@ -787,7 +793,6 @@ exceptions (`postgres`, `ollama` writable data dirs) are commented in the file.
 | Dockerfiles | `services/*/Dockerfile`, `frontend/Dockerfile` | WP03 CI, every developer |
 | nginx config | `frontend/nginx.conf` | runtime frontend image |
 | Compose files | `docker-compose*.yml` | everyone, CI |
-| Makefile | `Makefile` (help, up, down, logs, status) | everyone |
 | Postgres init | `infra/postgres/initdb/` | WP04 migrations |
 | Model lock | `infra/ollama/models.lock` | `ollama-init`, WP15 agents |
 | Smoke and image checks | `infra/tests/` | WP03 CI |
