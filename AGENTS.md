@@ -70,7 +70,7 @@ outputs. This applies even when the instructions you receive are written in anot
 
 | Document | What it is | When to use it |
 | -------- | ---------- | -------------- |
-| [`.docs/BACKEND.md`](.docs/BACKEND.md) | Standards for Python services: layout, layering, Pydantic, FastAPI, async, Pydantic AI agents, logging, tests | Whenever you write or review code in `services/core` or `services/agents-catalog` (domain, application, API, agents, infrastructure) |
+| [`.docs/BACKEND.md`](.docs/BACKEND.md) | Standards for Python services: layout, layering, Pydantic, FastAPI, async, Pydantic AI agents, logging, tests | Whenever you write or review code in `services/core` or `services/catalog` (domain, application, API, agents, infrastructure) |
 | [`.docs/FRONTEND.md`](.docs/FRONTEND.md) | Standards for the Vue/TypeScript SPA: layout, boundaries, SFC shape, Pinia, API/WebSocket clients, styling, office engine/renderer code rules, tests | Whenever you write or review code in `frontend/` |
 | [`.docs/DESIGN.md`](.docs/DESIGN.md) | Amiga 500 design specification: tokens, measures, typography, components, icons, sprites, tiles, animation timing, asset pipeline, copy, no audio | Whenever you create or change anything visible: UI components, layouts, colors, icons, pixel art, animations, UI text |
 | [`.docs/DOCKER.md`](.docs/DOCKER.md) | Dockerfile and Compose standards, image tags, security defaults, everyday commands, CI usage | When touching any Dockerfile, compose file, `.env.example`, container configuration, or when you need to run, test or debug the stack |
@@ -89,6 +89,7 @@ outputs. This applies even when the instructions you receive are written in anot
 | [`.docs/adr/0004-per-service-python-projects.md`](.docs/adr/0004-per-service-python-projects.md) | ADR-0004: self-contained subprojects (own manifest, lock, Dockerfile, build context); only `docker-compose.yml` and `Makefile` at the root | Before adding any file at the repository root, a Python/Node manifest, a Dockerfile or a compose build context; when wondering why there is no root uv workspace |
 | [`.docs/adr/0005-us-01-01-root-compose-and-makefile-first.md`](.docs/adr/0005-us-01-01-root-compose-and-makefile-first.md) | ADR-0005: root `docker-compose.yml` and `Makefile` exist from US-01.01; each scaffold story adds its Dockerfile and compose service; WP02 hardens | When adding a subproject or a service to compose, or changing the `Makefile` |
 | [`.docs/adr/0006-us-01-02-core-settings-and-app-factory.md`](.docs/adr/0006-us-01-02-core-settings-and-app-factory.md) | ADR-0006: `VO_*` names in settings errors, `create_app` factory started with `uvicorn --factory`, `uv_build` backend, temporary compose defaults | When touching `Settings`, the app factory or uvicorn entrypoint, a service build backend, or the core compose entry |
+| [`.docs/adr/0007-amend-constitution-rename-agents-catalog-to-catalog.md`](.docs/adr/0007-amend-constitution-rename-agents-catalog-to-catalog.md) | ADR-0007: the `agents-catalog` service is named `catalog` everywhere (folder, package, image, compose); Constitution v3.1.2 | When wondering why accepted ADR-0004 still says `agents-catalog`, or when configuring coverage for the `catalog` package |
 
 ## Project plan (`.project/`)
 
