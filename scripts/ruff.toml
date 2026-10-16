@@ -1,0 +1,6 @@
+# The repository scripts follow the service rules (BACKEND.md §3); only the test asserts differ.
+extend = "../services/core/pyproject.toml"
+src = ["."]
+
+[lint.per-file-ignores]
+"tests/**" = ["S101"]

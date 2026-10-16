@@ -25,6 +25,7 @@ dist/
 .coverage
 .coverage.*
 coverage.xml
+coverage.json
 htmlcov/
 
 # --- Node / frontend (pnpm, Vite, Vitest, vue-tsc) ---
