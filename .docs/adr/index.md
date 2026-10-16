@@ -13,6 +13,7 @@ in the same change.
 | ADR-0001 | [Record architecture decisions and ratify the Constitution](0001-record-architecture-decisions.md) | Accepted | 2026-10-16 | — | — |
 | ADR-0002 | [Technology stack](0002-technology-stack.md)                             | Proposed | 2026-10-16 | —          | —             |
 | ADR-0003 | [Amend Constitution: no audio, delivery tracking and ADR cadence](0003-amend-constitution-no-audio-and-delivery-tracking.md) | Accepted | 2026-10-16 | — | — |
+| ADR-0004 | [US-01.01: Self-contained subprojects; only docker-compose.yml and Makefile at the root](0004-per-service-python-projects.md) | Proposed | 2026-10-16 | — | — |
 
 ## Status legend
 

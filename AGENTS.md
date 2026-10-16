@@ -86,6 +86,7 @@ outputs. This applies even when the instructions you receive are written in anot
 | [`.docs/adr/0001-record-architecture-decisions.md`](.docs/adr/0001-record-architecture-decisions.md) | ADR-0001: use ADRs and ratify the Constitution | When unsure whether a decision needs an ADR or how amendments work |
 | [`.docs/adr/0002-technology-stack.md`](.docs/adr/0002-technology-stack.md) | ADR-0002: technology stack and its rationale | When questioning or proposing to replace a framework, service or library |
 | [`.docs/adr/0003-amend-constitution-no-audio-and-delivery-tracking.md`](.docs/adr/0003-amend-constitution-no-audio-and-delivery-tracking.md) | ADR-0003: no audio, roadmap/execution tracking, ADR after every story and WP | When wondering why sound is forbidden, how progress is tracked, or when an ADR is required |
+| [`.docs/adr/0004-per-service-python-projects.md`](.docs/adr/0004-per-service-python-projects.md) | ADR-0004: self-contained subprojects (own manifest, lock, Dockerfile, build context); only `docker-compose.yml` and `Makefile` at the root | Before adding any file at the repository root, a Python/Node manifest, a Dockerfile or a compose build context; when wondering why there is no root uv workspace |
 
 ## Project plan (`.project/`)
 
