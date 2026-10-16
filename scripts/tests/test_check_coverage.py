@@ -88,6 +88,30 @@ def test_branches_count_together_with_lines(tmp_path: Path) -> None:
 
 
 def test_files_of_other_packages_are_ignored(tmp_path: Path) -> None:
-    report = write_report(tmp_path, {"tests/unit/test_card.py": file_summary(10, 0)})
+    report = write_report(
+        tmp_path,
+        {
+            "tests/unit/test_card.py": file_summary(10, 0),
+            "src/virtual_office/domain/card.py": file_summary(10, 10),
+        },
+    )
 
     assert main([str(report), "--package", "virtual_office"]) == 0
+
+
+def test_fails_when_no_file_belongs_to_the_package(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    report = write_report(tmp_path, {"src/virtual_office/domain/card.py": file_summary(10, 10)})
+
+    assert main([str(report), "--package", "virtual_ofice"]) == 1
+    assert "no measured file belongs to package 'virtual_ofice'" in capsys.readouterr().out
+
+
+def test_a_threshold_is_not_reached_by_rounding(tmp_path: Path) -> None:
+    # 9496 of 10000 lines = 94.96 %, displayed as 95.0 % but below the 95 % domain threshold.
+    report = write_report(
+        tmp_path, {"src/virtual_office/domain/card.py": file_summary(10000, 9496)}
+    )
+
+    assert main([str(report), "--package", "virtual_office"]) == 1
