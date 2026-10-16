@@ -149,3 +149,66 @@ obsolete. The story is re-scoped as a docs story under ADR-0004.
 
 - Your Docker Compose is v2.23.3 (DOCKER.md §1 asks for v5.6.0); fine for these checks, will
   matter for `develop.watch` in WP02.
+
+## US-01.02 — Scaffold the `core` service package
+
+### Round 1 · 2026-10-16 · branch `feat/us-01-02-core-service-package` · head `2651ca4`
+
+**Verdict:** APPROVED
+
+**Quality gate**
+
+Run in the `dev` target of `services/core/Dockerfile` (pinned `python:3.15.0-slim-trixie` +
+`uv 0.13.1`). Host: Docker Engine 24.0.7 / Compose v2.23.3, below the DOCKER.md §1 minimum;
+every command below still succeeded.
+
+| Gate | Result |
+| ---- | ------ |
+| `uv lock --check` | pass |
+| `uv sync --frozen` (image build, `--no-dev` and dev) | pass |
+| ruff check (default rules; BACKEND.md §3 rule sets arrive in US-01.04) | pass |
+| ruff format --check (line length 100) | pass |
+| mypy --strict with the pydantic plugin (ad-hoc config) | pass |
+| mypy --strict without the plugin | fail — 16 `call-arg`/`arg-type` false positives on `Settings`; the plugin is configured in US-01.04 |
+| pytest (17 tests) | pass |
+| coverage | 96 % total, `api/app.py` 91 % (thresholds configured in US-01.04) |
+| lint-imports | not available (contracts arrive in US-01.04) |
+| `docker compose config`, `make up`, `make status` (`core` Up, UID 10001), `make down` | pass |
+| healthcheck, Playwright | not available (WP02, WP14+) |
+| `no-latest` script | not available (US-01.09); manual grep in `services/`, compose, Makefile: 0 hits |
+| frontend gates | not available (US-01.05–07) |
+
+**Acceptance**
+
+- AC1 — package tree with `__init__.py` everywhere; `tests/unit/test_package_layout.py`.
+- AC2 — `main.create_app()` returns a FastAPI app without `APIRoute`s
+  (`tests/unit/test_app_factory.py:15`).
+- AC3 — `Settings()` without env fails naming `VO_DATABASE_URL`, `VO_CATALOG_URL`,
+  `VO_OLLAMA_BASE_URL` (`services/core/src/virtual_office/settings.py:20`, alias generator;
+  `tests/unit/test_settings.py:15`).
+- AC4 — `test_app_factory` smoke tests pass.
+- AC5 — `requires-python = ">=3.15,<3.16"`, `required-version = "==0.13.1"`, all direct deps
+  `==` STACK.md §5; lock check and frozen sync pass.
+- AC6 — multi-stage Dockerfile, tag + digest pins, UID 10001, `.dockerignore`; `make up` →
+  `make status` shows `core` running.
+
+**Findings**
+
+- [ ] **R1 · Minor** — `docker-compose.yml:9` — `${VO_IMAGE_TAG:-dev}` deviates from DOCKER.md §3
+  rule 3 / §5.2 rule 6 (`${VAR:?}`). The default is needed so `make status|logs|down` keep
+  working on a clean clone before `.env.example` (US-01.08), but the reason is not written
+  down. Suggested fix: explain it in a compose comment and in the story ADR.
+- [ ] **R2 · Minor** — `services/core/src/virtual_office/api/app.py:12` — the lifespan stub is
+  never entered by a test. Suggested fix: a test that enters `app.router.lifespan_context`.
+- [ ] **R3 · Minor** — `services/core/tests/unit/test_app_factory.py:26` and
+  `tests/unit/test_settings.py:36` — env-reading tests do not clear `VO_LOG_LEVEL` (factory
+  test) and build values indirectly (frozen test: three URLs, then an override), so an ambient
+  variable could change the outcome. Suggested fix: a shared fixture that sets the three
+  required variables and deletes `VO_LOG_LEVEL`.
+
+**Notes**
+
+- Good call starting uvicorn through `--factory`: settings are never read at import time;
+  DOCKER.md and BACKEND.md were updated in the same branch.
+- New pins recorded in STACK.md: `uv_build 0.13.1`, `docker/dockerfile 1.28.0`.
+- Compose security defaults, healthcheck and network are deliberately left to WP02 (ADR-0005).
