@@ -4,7 +4,7 @@
 | ---------------- | ------------------------------------------------------------ |
 | Product name     | **Virtual Office**                                           |
 | Dashboard name   | **My Workbench**                                             |
-| Document status  | Ratified (v3.1.0)                                            |
+| Document status  | Ratified (v3.1.1)                                            |
 | Ratified on      | 2026-10-16                                                   |
 | Owner            | Project owner (human)                                        |
 | Applies to       | Every human and AI contributor, every line of code, every document, every asset in this repository |
@@ -1242,7 +1242,7 @@ virtual-office/
 ├── AGENTS.md                 # Rules for AI/human contributors (entry point)
 ├── .docs/                    # Constitution, Stack, Principles, ADRs
 ├── .agents/skills/           # Contributor skills (SKILL.md per skill)
-├── compose*.yaml, .env.example
+├── docker-compose*.yml, Makefile, .env.example   # orchestration only; each subproject owns its manifest, lock and Dockerfile
 ├── frontend/
 │   └── src/
 │       ├── ui-amiga/         # Amiga UI kit (Vue components + CSS tokens)
@@ -1561,6 +1561,7 @@ consumes generated TypeScript types. CI fails if the generated types drift.
 | 2.0.0   | 2026-10-16 | ADR-0002 | Article XV, XVI, XVIII aligned with the dockerized Vue + Python/FastAPI/Pydantic AI stack (STACK.md) and PRINCIPLES.md; stack details moved to STACK.md |
 | 3.0.0   | 2026-10-16 | ADR-0003 | Audio removed entirely: new §14.10 "No audio" (owner decision) |
 | 3.1.0   | 2026-10-16 | ADR-0003 | ADR after every user story and work package (§12.5); Article XXII delegates the detailed plan to `.project/ROADMAP.md` with READY/PROCESSING/DONE execution files |
+| 3.1.1   | 2026-10-16 | ADR-0004 | §15.2 layout clarified: root holds only `docker-compose*.yml`, `Makefile`, `.env.example`; each subproject owns its manifest, lockfile and Dockerfile |
 
 ---
 

@@ -1,6 +1,6 @@
 # ADR-0004: US-01.01: Self-contained subprojects; only docker-compose.yml and Makefile at the root
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-10-16
 - Deciders: Project owner
 - Related: [STACK.md](../STACK.md) §1, §2.2, §5, §10; [BACKEND.md](../BACKEND.md) §1;
@@ -47,8 +47,8 @@ We will lay out the repository as self-contained subprojects orchestrated from t
    `Makefile`. The Makefile is a thin wrapper over `docker compose` with no logic of its own:
    `make` prints the help; `up`, `down`, `logs`, `status` run the commands of DOCKER.md §6.
    It is created with the base compose file in WP02 (US-02.04).
-4. **Constitution §15.2 layout** is amended (PATCH, clarification of the layout sketch) once
-   this ADR is accepted:
+4. **Constitution §15.2 layout** is amended (PATCH, clarification of the layout sketch;
+   Constitution v3.1.1):
    - old: `├── compose*.yaml, .env.example`
    - new: `├── docker-compose*.yml, Makefile, .env.example   # orchestration only; each subproject owns its manifest, lock and Dockerfile`
 5. US-01.01 is re-scoped from "Create the uv workspace root" to recording this decision and
