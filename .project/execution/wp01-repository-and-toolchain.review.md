@@ -194,17 +194,24 @@ every command below still succeeded.
 
 **Findings**
 
-- [ ] **R1 · Minor** — `docker-compose.yml:9` — `${VO_IMAGE_TAG:-dev}` deviates from DOCKER.md §3
+- [x] **R1 · Minor** — `docker-compose.yml:9` — `${VO_IMAGE_TAG:-dev}` deviates from DOCKER.md §3
   rule 3 / §5.2 rule 6 (`${VAR:?}`). The default is needed so `make status|logs|down` keep
   working on a clean clone before `.env.example` (US-01.08), but the reason is not written
   down. Suggested fix: explain it in a compose comment and in the story ADR.
-- [ ] **R2 · Minor** — `services/core/src/virtual_office/api/app.py:12` — the lifespan stub is
+  → Resolved in 549f118: compose comment explains the default; the ADR records it.
+- [x] **R2 · Minor** — `services/core/src/virtual_office/api/app.py:12` — the lifespan stub is
   never entered by a test. Suggested fix: a test that enters `app.router.lifespan_context`.
-- [ ] **R3 · Minor** — `services/core/tests/unit/test_app_factory.py:26` and
+  → Resolved in 9c1bf5f: `test_app_lifespan_starts_and_stops`; coverage now 100 %.
+- [x] **R3 · Minor** — `services/core/tests/unit/test_app_factory.py:26` and
   `tests/unit/test_settings.py:36` — env-reading tests do not clear `VO_LOG_LEVEL` (factory
   test) and build values indirectly (frozen test: three URLs, then an override), so an ambient
   variable could change the outcome. Suggested fix: a shared fixture that sets the three
   required variables and deletes `VO_LOG_LEVEL`.
+  → Resolved in 9c1bf5f: `core_environment` / `no_core_environment` / `settings` fixtures in
+  `tests/conftest.py`; added a test for `VO_LOG_LEVEL`.
+
+**Rework:** 2026-10-16 · head 549f118 · gates: ruff, ruff format, mypy strict + pydantic plugin,
+pytest 19 passed (coverage 100 %), `docker compose config` — all pass.
 
 **Notes**
 
