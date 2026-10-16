@@ -17,6 +17,7 @@ every image and compose entry is written so that all services look and behave th
 | Docker Engine   | 29.9.1          | Or Docker Desktop shipping this engine |
 | Docker Compose  | v5.6.0          | Compose v2 plugin syntax (`docker compose`), Compose Specification |
 | BuildKit        | default builder | Required for cache mounts and `--mount=type=secret` |
+| GNU Make        | 3.81            | Only to run the root `Makefile` shortcuts (macOS ships 3.81); every target is a plain `docker compose` command that also works without `make` |
 
 Versions verified on 2026-10-16 (see STACK.md policy). Older Engine/Compose releases are not
 supported: upgrade before reporting a problem.
@@ -26,15 +27,16 @@ supported: upgrade before reporting a problem.
 ## 2. Files
 
 ```
-compose.yaml            # base: production-like, no bind mounts, only frontend published
-compose.dev.yaml        # overlay: develop.watch, debug logging, Postgres port on 127.0.0.1
-compose.gpu.yaml        # overlay: NVIDIA GPU reservation for ollama
-.env.example            # every variable, documented; copied to .env (git-ignored) locally
-frontend/Dockerfile
-services/core/Dockerfile
-services/agents-catalog/Dockerfile
-infra/postgres/initdb/  # init scripts: databases and roles (see POSTGRES.md)
-infra/ollama/models.lock # pinned model tags and digests (see OLLAMA.md)
+docker-compose.yml                  # base: production-like, no bind mounts, only frontend published
+docker-compose.dev.yml              # overlay: develop.watch, debug logging, Postgres port on 127.0.0.1
+docker-compose.gpu.yml              # overlay: NVIDIA GPU reservation for ollama
+.env.example                        # every variable, documented; copied to .env (git-ignored) locally
+Makefile                            # entry point: `make` (help), up, down, logs, status
+frontend/Dockerfile                 # build context: frontend/
+services/core/Dockerfile            # build context: services/core/ (own pyproject.toml + uv.lock)
+services/agents-catalog/Dockerfile  # build context: services/agents-catalog/
+infra/postgres/initdb/              # init scripts: databases and roles (see POSTGRES.md)
+infra/ollama/models.lock            # pinned model tags and digests (see OLLAMA.md)
 ```
 
 Every build context has a `.dockerignore` that excludes at least: `.git`, `node_modules`,
@@ -92,14 +94,13 @@ WORKDIR /app
 FROM base AS deps
 COPY --from=uv /uv /usr/local/bin/uv
 COPY pyproject.toml uv.lock ./
-COPY services/core/pyproject.toml services/core/
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev --no-install-workspace --package virtual-office-core
+    uv sync --frozen --no-dev --no-install-project
 
 FROM deps AS build
-COPY services/core/ services/core/
+COPY . .
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev --package virtual-office-core
+    uv sync --frozen --no-dev
 
 FROM base AS runtime
 COPY --from=build --chown=10001:10001 /app /app
@@ -110,14 +111,16 @@ ENTRYPOINT ["uvicorn", "virtual_office.main:app", "--host", "0.0.0.0", "--port",
             "--proxy-headers", "--forwarded-allow-ips", "*", "--no-server-header"]
 
 FROM build AS dev
-RUN --mount=type=cache,target=/root/.cache/uv uv sync --frozen --package virtual-office-core
+RUN --mount=type=cache,target=/root/.cache/uv uv sync --frozen
 COPY --from=uv /uv /usr/local/bin/uv
 USER 10001
 ENTRYPOINT ["uvicorn", "virtual_office.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
 ```
 
-- The build context is the **repository root** (uv workspace); `dockerfile:` points to the
-  service Dockerfile.
+- The build context is the **service folder** (`services/core/`, `services/agents-catalog/`):
+  each service is an independent uv project with its own `pyproject.toml` and `uv.lock`, and
+  no Python manifest exists at the repository root
+  ([ADR-0004](adr/0004-per-service-python-projects.md)).
 - Same image runs the one-off jobs (`alembic upgrade head`, `rebuild-projections`, seeds) by
   overriding `command`.
 
@@ -131,21 +134,21 @@ ARG NGINX_IMAGE=nginxinc/nginx-unprivileged:1.31.7-alpine3.24@sha256:<digest>
 FROM ${NODE_IMAGE} AS deps
 WORKDIR /app
 RUN corepack enable
-COPY frontend/package.json frontend/pnpm-lock.yaml frontend/.npmrc ./
+COPY package.json pnpm-lock.yaml .npmrc ./
 RUN --mount=type=cache,target=/root/.local/share/pnpm/store pnpm install --frozen-lockfile
 
 FROM deps AS build
-COPY frontend/ ./
+COPY . ./
 ARG VITE_APP_VERSION
 RUN pnpm build
 
 FROM ${NGINX_IMAGE} AS runtime
-COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 8080
 
 FROM deps AS dev
-COPY frontend/ ./
+COPY . ./
 EXPOSE 5173
 ENTRYPOINT ["pnpm", "dev", "--host", "0.0.0.0"]
 ```
@@ -161,7 +164,7 @@ to `http://core:8000` (WebSocket upgrade headers, `proxy_read_timeout 3600s` for
 
 ## 5. Compose standards
 
-### 5.1 Skeleton (`compose.yaml`)
+### 5.1 Skeleton (`docker-compose.yml`)
 
 ```yaml
 name: virtual-office
@@ -182,7 +185,7 @@ services:
   frontend:
     <<: *app-defaults
     image: virtual-office/frontend:${VO_IMAGE_TAG:?}
-    build: { context: ., dockerfile: frontend/Dockerfile, target: runtime }
+    build: { context: frontend, target: runtime }
     ports: ["127.0.0.1:8080:8080"]
     depends_on:
       core: { condition: service_healthy }
@@ -196,7 +199,7 @@ services:
   core:
     <<: *app-defaults
     image: virtual-office/core:${VO_IMAGE_TAG:?}
-    build: { context: ., dockerfile: services/core/Dockerfile, target: runtime }
+    build: { context: services/core, target: runtime }
     env_file: [.env]
     environment:
       VO_DATABASE_URL: postgresql+asyncpg://core_app:${VO_CORE_DB_PASSWORD:?}@postgres:5432/core
@@ -242,13 +245,13 @@ volumes:
    `condition: service_healthy` or `service_completed_successfully`.
 6. Configuration via environment only (twelve-factor III). Required variables use
    `${VAR:?}` so compose fails fast when missing. No secrets in compose files.
-7. Named volumes only in the base file; bind mounts only in `compose.dev.yaml`.
+7. Named volumes only in the base file; bind mounts only in `docker-compose.dev.yml`.
 8. Resource limits for `frontend`, `core`, `agents-catalog`; `ollama` limits are documented in
    OLLAMA.md.
 9. Logs go to stdout/stderr; rotation via the `json-file` options above.
 10. One internal network `office`; containers address each other by service name.
 
-### 5.3 Dev overlay (`compose.dev.yaml`)
+### 5.3 Dev overlay (`docker-compose.dev.yml`)
 
 - Builds the `dev` targets; uses `develop.watch`:
   - `sync` source folders (`frontend/src`, `services/*/src`) into containers;
@@ -256,7 +259,7 @@ volumes:
 - `VO_ENV=dev`, `VO_LOG_LEVEL=DEBUG`, API docs enabled.
 - Vite dev server on `127.0.0.1:5173` proxying `/api` and `/ws` to `core`.
 
-### 5.4 GPU overlay (`compose.gpu.yaml`)
+### 5.4 GPU overlay (`docker-compose.gpu.yml`)
 
 Adds to `ollama`:
 
@@ -276,16 +279,29 @@ deploy:
 
 All commands run from the repository root. They are documented here (not in AGENTS.md).
 
+The root `Makefile` is the everyday entry point. It is a thin wrapper over `docker compose`
+(no logic of its own, no host tools besides Docker and `make`); `make` alone prints the help.
+
+| Target        | Runs |
+| ------------- | ---- |
+| `make` / `make help` | Lists the targets with a one-line description (default goal) |
+| `make up`     | `docker compose up --build -d` |
+| `make down`   | `docker compose down` |
+| `make logs`   | `docker compose logs -f` (`make logs s=core` for one service) |
+| `make status` | `docker compose ps` |
+
+Raw commands, for everything the Makefile does not wrap:
+
 | Goal                                 | Command |
 | ------------------------------------ | ------- |
 | First setup                          | `cp .env.example .env` then fill the required values |
 | Start everything (prod-like)         | `docker compose up --build -d` |
-| Start dev mode with live sync        | `docker compose -f compose.yaml -f compose.dev.yaml watch` |
-| Start with NVIDIA GPU                | `docker compose -f compose.yaml -f compose.gpu.yaml up -d` |
+| Start dev mode with live sync        | `docker compose -f docker-compose.yml -f docker-compose.dev.yml watch` |
+| Start with NVIDIA GPU                | `docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d` |
 | Follow logs of one service           | `docker compose logs -f core` |
-| Backend tests                        | `docker compose -f compose.yaml -f compose.dev.yaml run --rm core pytest` |
-| Backend lint and types               | `docker compose -f compose.yaml -f compose.dev.yaml run --rm core sh -c "ruff check && ruff format --check && mypy && lint-imports"` |
-| Frontend tests and checks            | `docker compose -f compose.yaml -f compose.dev.yaml run --rm frontend sh -c "pnpm lint && pnpm typecheck && pnpm test"` |
+| Backend tests                        | `docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm core pytest` |
+| Backend lint and types               | `docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm core sh -c "ruff check && ruff format --check && mypy && lint-imports"` |
+| Frontend tests and checks            | `docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm frontend sh -c "pnpm lint && pnpm typecheck && pnpm test"` |
 | Run migrations manually              | `docker compose run --rm migrate-core` |
 | Rebuild projections                  | `docker compose --profile admin run --rm rebuild-projections` |
 | Backup database                      | `docker compose --profile backup run --rm backup` |
@@ -318,4 +334,6 @@ read-only (dev overlay only).
 - [ ] Env-only configuration; .env.example updated; required vars use ${VAR:?}
 - [ ] Security defaults kept (read_only, cap_drop, no-new-privileges) or justified
 - [ ] `docker compose up --build` from a clean clone is healthy
+- [ ] Build context is the subproject folder; no Python/Node manifest at the repository root
+- [ ] New everyday commands added to the `Makefile` help only if they wrap `docker compose`
 ```

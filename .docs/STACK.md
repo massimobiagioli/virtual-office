@@ -88,13 +88,14 @@ flowchart LR
 ### 2.2 Compose layout
 
 ```
-compose.yaml              # production-like base (Compose Specification, no `version:` key)
-compose.dev.yaml          # dev overlay: bind mounts / `develop.watch`, exposed DB port, debug logs
-compose.gpu.yaml          # optional overlay: GPU reservation for ollama
+docker-compose.yml        # production-like base (Compose Specification, no `version:` key)
+docker-compose.dev.yml    # dev overlay: bind mounts / `develop.watch`, exposed DB port, debug logs
+docker-compose.gpu.yml    # optional overlay: GPU reservation for ollama
 .env.example              # every variable documented, no secrets
+Makefile                  # thin wrapper over `docker compose`: help (default), up, down, logs, status
 ```
 
-Mandatory in `compose.yaml`:
+Mandatory in `docker-compose.yml`:
 
 - `healthcheck` for every service; `depends_on` with `condition: service_healthy`
   (`core` waits for `postgres`, `agents-catalog`, `ollama`);
@@ -228,13 +229,14 @@ smallest tool that gives GPU rendering with pixel-perfect control.
 
 ## 5. Backend services (`services/core`, `services/agents-catalog`)
 
-Python + FastAPI + Pydantic AI. Both services share tooling and conventions; they are separate
-`uv` workspace members.
+Python + FastAPI + Pydantic AI. Both services share tooling and conventions; each is an independent uv project with its own
+`pyproject.toml` and `uv.lock` inside its folder, and no Python manifest sits at the repository
+root ([ADR-0004](adr/0004-per-service-python-projects.md)).
 
 | Concern                 | Choice                       | Version   | Notes |
 | ----------------------- | ---------------------------- | --------- | ----- |
 | Runtime                 | CPython                      | 3.15.0    | Released 2026-10-09; native wheels verified for `pydantic-core`, `asyncpg`, `uvloop`, `httptools` |
-| Package/env manager     | uv                           | 0.13.1    | `uv.lock` committed; `uv sync --frozen` in Docker |
+| Package/env manager     | uv                           | 0.13.1    | One `uv.lock` per service, committed; `uv sync --frozen` in Docker |
 | Web framework           | FastAPI                      | 0.143.3   | REST + WebSocket; OpenAPI is the contract source |
 | ASGI server             | uvicorn                      | 0.54.0    | With `uvloop` + `httptools` |
 | Validation / models     | Pydantic                     | 2.14.1    | DTOs, event payloads, settings, catalog definitions |
@@ -310,7 +312,7 @@ Dependency rule (import-linter contract): `domain` ← `application` ← `agents
 | Optional provider       | Anthropic (Pydantic AI `[anthropic]` extra), enabled only when `ANTHROPIC_API_KEY` is set; chosen per role in Preferences |
 | Default models (pinned tags) | PM, Architect, QA: `qwen3.6:27b` · Developers: `qwen3.6:27b-coding` · Designer, Support: `gemma4:12b` |
 | Model pinning           | Exact tags + digests in `infra/ollama/models.lock`; bare names or `latest` are rejected by settings validation |
-| Hardware                | CPU works but is slow; `compose.gpu.yaml` reserves an NVIDIA GPU. On macOS, Docker cannot use the Apple GPU: the documented alternative is setting `VO_OLLAMA_BASE_URL` to a host-installed Ollama — the container remains the default |
+| Hardware                | CPU works but is slow; `docker-compose.gpu.yml` reserves an NVIDIA GPU. On macOS, Docker cannot use the Apple GPU: the documented alternative is setting `VO_OLLAMA_BASE_URL` to a host-installed Ollama — the container remains the default |
 
 Model choices are configuration, not code (Constitution Article XVI) and are re-evaluated with
 the role eval sets whenever a model tag changes.
@@ -326,7 +328,7 @@ the role eval sets whenever a model tag changes.
 | Event store     | Append-only table `events` (`event_id` ULID PK, `aggregate_type`, `aggregate_id`, `aggregate_version`, `type`, `version`, `occurred_at timestamptz`, `actor jsonb`, `payload jsonb`, `meta jsonb`, `correlation_id`, `causation_id`), unique `(aggregate_type, aggregate_id, aggregate_version)` for optimistic concurrency; `UPDATE`/`DELETE` revoked for the runtime role |
 | Projections     | Regular tables updated in the same transaction as the append (v1) |
 | Realtime fan-out| After commit, `core` pushes to WebSocket clients; `LISTEN/NOTIFY` reserved for future multi-instance `core` |
-| Backups         | `pg_dump` one-shot service in `compose.yaml` profile `backup` |
+| Backups         | `pg_dump` one-shot service in `docker-compose.yml` profile `backup` |
 
 ---
 
@@ -356,14 +358,13 @@ the role eval sets whenever a model tag changes.
 ```
 virtual-office/
 ├── AGENTS.md
-├── compose.yaml · compose.dev.yaml · compose.gpu.yaml · .env.example · renovate.json
+├── docker-compose.yml · docker-compose.dev.yml · docker-compose.gpu.yml · Makefile · .env.example · renovate.json
 ├── .docs/                        # Constitution, Stack, Principles, ADRs
 ├── .agents/skills/               # Contributor skills
 ├── frontend/                     # Vue + Vite SPA, ui-amiga kit, office-engine, Dockerfile, nginx.conf
 ├── services/
-│   ├── core/                     # FastAPI + Pydantic AI, Dockerfile, alembic/
-│   └── agents-catalog/           # FastAPI, catalog/ (prompts, role YAML, characters), Dockerfile, alembic/
-├── pyproject.toml · uv.lock      # uv workspace root (members: services/*)
+│   ├── core/                     # FastAPI + Pydantic AI, pyproject.toml · uv.lock, Dockerfile, alembic/
+│   └── agents-catalog/           # FastAPI, catalog/ (prompts, role YAML, characters), pyproject.toml · uv.lock, Dockerfile, alembic/
 ├── assets/                       # Sprites, tiles, maps, fonts (+ LICENSES.md, src/)
 └── e2e/                          # Playwright tests against the compose stack
 ```
