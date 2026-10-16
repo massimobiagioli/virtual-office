@@ -8,6 +8,7 @@ Usage: python -I scripts/check_coverage.py services/core/coverage.json --package
 
 import argparse
 import json
+import math
 import sys
 from pathlib import Path, PurePosixPath
 
@@ -47,16 +48,22 @@ def main(argv: list[str] | None = None) -> int:
             covered.get(layer, 0) + summary["covered_lines"] + summary["covered_branches"]
         )
 
+    if not measured:
+        sys.stdout.write(f"FAIL no measured file belongs to package {args.package!r}\n")
+        return 1
+
     failed = False
     for layer in sorted(measured):
         if measured[layer] == 0:
             continue
         percent = 100.0 * covered[layer] / measured[layer]
         required = THRESHOLDS.get(layer, DEFAULT_THRESHOLD)
-        ok = round(percent, 1) >= required
+        ok = percent >= required
         failed = failed or not ok
         status = "ok  " if ok else "FAIL"
-        sys.stdout.write(f"{status} {layer}: {percent:.1f} % (required {required:.0f} %)\n")
+        # Truncated, never rounded up: 94.96 % reads 94.9 %, not a misleading 95.0 %.
+        shown = math.floor(percent * 10) / 10
+        sys.stdout.write(f"{status} {layer}: {shown:.1f} % (required {required:.0f} %)\n")
     return 1 if failed else 0
 
 
