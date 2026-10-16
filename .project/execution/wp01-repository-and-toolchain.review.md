@@ -372,13 +372,17 @@ Run in a throwaway container from the pinned `python:3.15.0-slim-trixie` + `uv 0
 
 **Findings**
 
-- [ ] **R1 · Major** — `scripts/check_coverage.py:41` — when `--package` matches no file of the
+- [x] **R1 · Major** — `scripts/check_coverage.py:41` — when `--package` matches no file of the
   report (typo, wrong report), every file is skipped and the check exits 0 with no output: the
   gate passes silently (Constitution §18.2, "a rule that cannot fail is not a rule"). Suggested
   fix: fail with a message when no file belongs to the package.
-- [ ] **R2 · Minor** — `scripts/check_coverage.py:52` — `round(percent, 1) >= required` lets
+  → Resolved in caf126b: exits 1 with "no measured file belongs to package …";
+  `test_fails_when_no_file_belongs_to_the_package`.
+- [x] **R2 · Minor** — `scripts/check_coverage.py:52` — `round(percent, 1) >= required` lets
   94.96 % pass the 95 % domain threshold. Suggested fix: compare the unrounded percentage;
   round only for display.
+  → Resolved in caf126b: exact comparison, display truncated (94.96 % reads 94.9 %);
+  `test_a_threshold_is_not_reached_by_rounding`.
 
 **Notes**
 
@@ -389,3 +393,6 @@ Run in a throwaway container from the pinned `python:3.15.0-slim-trixie` + `uv 0
 - `source_pkgs = ["catalog"]` resolves the coverage caveat of ADR-0007.
 - The scripts are not yet run by anything automatic: pre-commit (US-01.10) and CI (WP03)
   must call them.
+
+**Rework:** 2026-10-16 · head caf126b · gates: scripts ruff, ruff format, mypy strict pass;
+`pytest scripts/tests` 22 passed; core pytest + `check_coverage.py` on the real report exit 0.
