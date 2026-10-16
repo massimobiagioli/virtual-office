@@ -114,6 +114,8 @@ ENTRYPOINT ["uvicorn", "virtual_office.main:create_app", "--factory", "--host", 
 FROM build AS dev
 RUN --mount=type=cache,target=/root/.cache/uv uv sync --frozen
 COPY --from=uv /uv /usr/local/bin/uv
+# UID 10001 has no home directory: uv needs a writable cache.
+ENV UV_CACHE_DIR=/tmp/uv-cache
 USER 10001
 ENTRYPOINT ["uvicorn", "virtual_office.main:create_app", "--factory", "--host", "0.0.0.0", \
             "--port", "8000", "--reload"]

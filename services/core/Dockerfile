@@ -40,7 +40,8 @@ ENTRYPOINT ["uvicorn", "virtual_office.main:create_app", "--factory", "--host", 
 FROM build AS dev
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen && chown -R 10001:10001 /app
-ENV PATH="/app/.venv/bin:${PATH}"
+# UID 10001 has no home directory: uv needs a writable cache for `uv sync`/`uv lock --check`.
+ENV PATH="/app/.venv/bin:${PATH}" UV_CACHE_DIR=/tmp/uv-cache
 USER 10001
 EXPOSE 8000
 ENTRYPOINT ["uvicorn", "virtual_office.main:create_app", "--factory", "--host", "0.0.0.0", \
