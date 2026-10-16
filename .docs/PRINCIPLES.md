@@ -122,7 +122,7 @@ UI copy, events and conversations. If a term is missing, add it there first.
 | **Intake**     | Notes, classification, triage                      | `core/domain/intake`        |
 | **Decisions**  | Project ADRs                                       | `core/domain/decisions`     |
 | **Conversation** | PM chat, proposed commands                      | `core/application/chat`     |
-| **Agent Catalog** | Role definitions, prompts, characters           | `agents-catalog` service    |
+| **Agent Catalog** | Role definitions, prompts, characters           | `catalog` service    |
 | **Office Scene** | Visual projection: map, sprites, choreographies (generic subdomain, read-only) | `frontend/src/office-engine` |
 
 **Context map:**
@@ -165,10 +165,10 @@ UI copy, events and conversations. If a term is missing, add it there first.
 | I | **Codebase**         | One repository, many deploys (dev, CI, local prod-like). Each service builds from its directory. |
 | II | **Dependencies**    | Declared and pinned exactly (`pyproject.toml` + `uv.lock`, `package.json` + `pnpm-lock.yaml`); isolated in containers; nothing relies on host tools. |
 | III | **Config**         | All config in environment variables (`pydantic-settings`, Vite build-time vars only for non-secret values). `.env.example` documents every variable. No config in code, no secrets in the repo. |
-| IV | **Backing services** | Postgres, Ollama, agents-catalog and optional cloud LLMs are attached resources addressed by URL from env (`VO_DATABASE_URL`, `VO_OLLAMA_BASE_URL`, `VO_CATALOG_URL`). Swapping one requires no code change. |
+| IV | **Backing services** | Postgres, Ollama, catalog and optional cloud LLMs are attached resources addressed by URL from env (`VO_DATABASE_URL`, `VO_OLLAMA_BASE_URL`, `VO_CATALOG_URL`). Swapping one requires no code change. |
 | V | **Build, release, run** | Strict separation: images are built once (build), combined with env config (release), and run by compose (run). Images are immutable and tagged with the git SHA. |
 | VI | **Processes**       | Services are stateless; all state lives in Postgres (and the Ollama model volume). No sticky sessions; WebSocket clients resync from `lastEventId`. |
-| VII | **Port binding**   | Each service is self-contained and exports HTTP on its port (`core:8000`, `agents-catalog:8001`, `frontend:8080`). |
+| VII | **Port binding**   | Each service is self-contained and exports HTTP on its port (`core:8000`, `catalog:8001`, `frontend:8080`). |
 | VIII | **Concurrency**   | Scale by process type: `core` web, Orchestrator worker loop (same image, separate command when needed), catalog. Concurrency of LLM jobs is configurable. |
 | IX | **Disposability**   | Fast startup (< 5 s excluding model pulls), graceful shutdown on SIGTERM: stop accepting work, finish/checkpoint running agent jobs (Constitution §15.6), close connections. |
 | X | **Dev/prod parity**  | Same images and same Postgres version in dev, CI and prod-like; tests use real Postgres via testcontainers, not SQLite. |

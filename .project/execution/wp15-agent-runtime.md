@@ -33,7 +33,7 @@ acceptance criteria and tasks are checked, merged, and its ADR is written.
 ## 1. Objective
 
 Provide the shared machinery every AI agent uses: versioned role definitions and prompts served by
-`agents-catalog`; a model factory for Ollama (default), fake mode and an optional cloud provider;
+`catalog`; a model factory for Ollama (default), fake mode and an optional cloud provider;
 an event-sourced job lifecycle with concurrency, timeouts, retries, recovery, budgets and pauses;
 safety against prompt injection; tracing of tool calls and transcripts; and an evaluation harness.
 After WP15, adding a role's behavior means writing its output model, tools and prompt — nothing

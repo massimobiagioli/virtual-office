@@ -40,7 +40,7 @@
 | Database  | Owner role (DDL, migrations) | Runtime role (DML)  | Used by |
 | --------- | ---------------------------- | ------------------- | ------- |
 | `core`    | `core_owner`                 | `core_app`          | `core`, `migrate-core`, `rebuild-projections` |
-| `catalog` | `catalog_owner`              | `catalog_app`       | `agents-catalog`, `migrate-catalog`, `catalog-seed` |
+| `catalog` | `catalog_owner`              | `catalog_app`       | `catalog`, `migrate-catalog`, `catalog-seed` |
 
 Rules:
 

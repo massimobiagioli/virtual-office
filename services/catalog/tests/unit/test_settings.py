@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from agents_catalog.settings import Settings
+from catalog.settings import Settings
 
 
 @pytest.mark.usefixtures("no_catalog_environment")

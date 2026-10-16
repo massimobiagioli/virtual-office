@@ -4,8 +4,8 @@ import pytest
 from fastapi import FastAPI
 from fastapi.routing import APIRoute
 
-from agents_catalog.main import create_app
-from agents_catalog.settings import Settings
+from catalog.main import create_app
+from catalog.settings import Settings
 
 
 def test_app_factory_returns_a_fastapi_app_without_api_routes(settings: Settings) -> None:

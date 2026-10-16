@@ -34,7 +34,7 @@ docker-compose.gpu.yml              # overlay: NVIDIA GPU reservation for ollama
 Makefile                            # entry point: `make` (help), up, down, logs, status
 frontend/Dockerfile                 # build context: frontend/
 services/core/Dockerfile            # build context: services/core/ (own pyproject.toml + uv.lock)
-services/agents-catalog/Dockerfile  # build context: services/agents-catalog/
+services/catalog/Dockerfile         # build context: services/catalog/
 infra/postgres/initdb/              # init scripts: databases and roles (see POSTGRES.md)
 infra/ollama/models.lock            # pinned model tags and digests (see OLLAMA.md)
 ```
@@ -77,7 +77,7 @@ Every build context has a `.dockerignore` that excludes at least: `.git`, `node_
 - `EXPOSE` the service port; `ENTRYPOINT` in exec form; one process per container.
 - `STOPSIGNAL SIGTERM` (default) and the app handles graceful shutdown (twelve-factor IX).
 
-### 4.2 Python services (`core`, `agents-catalog`)
+### 4.2 Python services (`core`, `catalog`)
 
 ```dockerfile
 # syntax=docker/dockerfile:<pinned>
@@ -121,7 +121,7 @@ ENTRYPOINT ["uvicorn", "virtual_office.main:create_app", "--factory", "--host", 
             "--port", "8000", "--reload"]
 ```
 
-- The build context is the **service folder** (`services/core/`, `services/agents-catalog/`):
+- The build context is the **service folder** (`services/core/`, `services/catalog/`):
   each service is an independent uv project with its own `pyproject.toml` and `uv.lock`, and
   no Python manifest exists at the repository root
   ([ADR-0004](adr/0004-per-service-python-projects.md)).
@@ -209,12 +209,12 @@ services:
     env_file: [.env]
     environment:
       VO_DATABASE_URL: postgresql+asyncpg://core_app:${VO_CORE_DB_PASSWORD:?}@postgres:5432/core
-      VO_CATALOG_URL: http://agents-catalog:8001/
+      VO_CATALOG_URL: http://catalog:8001/
       VO_OLLAMA_BASE_URL: ${VO_OLLAMA_BASE_URL:-http://ollama:11434/}
     depends_on:
       postgres: { condition: service_healthy }
       migrate-core: { condition: service_completed_successfully }
-      agents-catalog: { condition: service_healthy }
+      catalog: { condition: service_healthy }
       ollama-init: { condition: service_completed_successfully }
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(urllib.request.urlopen('http://127.0.0.1:8000/health/ready').status!=200)"]
@@ -226,7 +226,7 @@ services:
       resources:
         limits: { cpus: "2", memory: 1g }
 
-  # agents-catalog, ollama, ollama-init, postgres, migrate-core, migrate-catalog, catalog-seed …
+  # catalog, ollama, ollama-init, postgres, migrate-core, migrate-catalog, catalog-seed …
 
 networks:
   office: {}
@@ -239,7 +239,7 @@ volumes:
 ### 5.2 Rules
 
 1. Top-level `name: virtual-office`; **no** `version:` key.
-2. Service names are exactly: `frontend`, `core`, `agents-catalog`, `ollama`, `postgres`, plus
+2. Service names are exactly: `frontend`, `core`, `catalog`, `ollama`, `postgres`, plus
    one-off jobs `migrate-core`, `migrate-catalog`, `catalog-seed`, `ollama-init`,
    `rebuild-projections` (profile `admin`), `backup` (profile `backup`).
 3. Shared defaults through the `x-app-defaults` anchor; services may relax `read_only` /
@@ -252,7 +252,7 @@ volumes:
 6. Configuration via environment only (twelve-factor III). Required variables use
    `${VAR:?}` so compose fails fast when missing. No secrets in compose files.
 7. Named volumes only in the base file; bind mounts only in `docker-compose.dev.yml`.
-8. Resource limits for `frontend`, `core`, `agents-catalog`; `ollama` limits are documented in
+8. Resource limits for `frontend`, `core`, `catalog`; `ollama` limits are documented in
    OLLAMA.md.
 9. Logs go to stdout/stderr; rotation via the `json-file` options above.
 10. One internal network `office`; containers address each other by service name.

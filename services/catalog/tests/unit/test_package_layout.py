@@ -4,13 +4,13 @@ from pathlib import Path
 import pytest
 
 PACKAGES = (
-    "agents_catalog",
-    "agents_catalog.domain",
-    "agents_catalog.application",
-    "agents_catalog.infrastructure",
-    "agents_catalog.api",
+    "catalog",
+    "catalog.domain",
+    "catalog.application",
+    "catalog.infrastructure",
+    "catalog.api",
 )
-MODULES = ("agents_catalog.settings", "agents_catalog.main")
+MODULES = ("catalog.settings", "catalog.main")
 CATALOG_FOLDERS = ("roles", "prompts", "characters", "evals")
 CATALOG_ROOT = Path(__file__).resolve().parents[2] / "catalog"
 

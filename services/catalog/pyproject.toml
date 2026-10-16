@@ -1,7 +1,7 @@
 [project]
-name = "virtual-office-agents-catalog"
+name = "virtual-office-catalog"
 version = "0.1.0"
-description = "Virtual Office agents-catalog service: role definitions, prompts, characters, evals."
+description = "Virtual Office catalog service: role definitions, prompts, characters, evals."
 requires-python = ">=3.15,<3.16"
 dependencies = [
     "fastapi==0.143.3",
@@ -28,7 +28,7 @@ build-backend = "uv_build"
 required-version = "==0.13.1"
 
 [tool.uv.build-backend]
-module-name = "agents_catalog"
+module-name = "catalog"
 
 # Minimal test runner settings; the full tool configuration arrives in US-01.04.
 [tool.pytest.ini_options]

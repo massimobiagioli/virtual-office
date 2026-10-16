@@ -4,7 +4,7 @@ from virtual_office.settings import Settings
 
 REQUIRED_ENVIRONMENT = {
     "VO_DATABASE_URL": "postgresql+asyncpg://core_app@postgres:5432/core",
-    "VO_CATALOG_URL": "http://agents-catalog:8001/",
+    "VO_CATALOG_URL": "http://catalog:8001/",
     "VO_OLLAMA_BASE_URL": "http://ollama:11434/",
 }
 OPTIONAL_VARIABLES = ("VO_LOG_LEVEL",)

@@ -11,7 +11,7 @@ def _env_name(field_name: str) -> str:
 
 
 class Settings(BaseSettings):
-    """Configuration of the agents-catalog service, read from `VO_*` environment variables only.
+    """Configuration of the catalog service, read from `VO_*` environment variables only.
 
     Each field's validation alias is its environment variable name, so a validation error
     names the variable to set (`VO_DATABASE_URL`), not the Python field.
