@@ -85,7 +85,7 @@ virtual_office/
 │   ├── schemas/                  # request/response DTOs (never domain objects)
 │   └── ws/                       # WebSocket gateway and message models
 ├── settings.py                   # pydantic-settings
-└── main.py                       # uvicorn entrypoint: app = create_app()
+└── main.py                       # uvicorn factory: create_app() reads Settings from the env
 ```
 
 `agents-catalog` uses the same shape, minus `agents/` and `orchestrator/`.
@@ -205,12 +205,21 @@ class CardRejected(DomainEvent):
 ### 4.3 Settings
 
 ```python
-from pydantic import PostgresDsn, HttpUrl
+from pydantic import AliasGenerator, HttpUrl, PostgresDsn
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+def _env_name(field_name: str) -> str:
+    return f"VO_{field_name.upper()}"
+
+
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_prefix="VO_", extra="forbid", frozen=True)
+    model_config = SettingsConfigDict(
+        alias_generator=AliasGenerator(validation_alias=_env_name),  # errors name VO_* vars
+        validate_by_name=True,
+        extra="forbid",
+        frozen=True,
+    )
 
     database_url: PostgresDsn
     catalog_url: HttpUrl
@@ -221,10 +230,12 @@ class Settings(BaseSettings):
 
 - Twelve-factor: **environment only**. No `.env` file is read in production images; compose
   injects variables. Every variable is documented in `.env.example`.
-- Prefix `VO_` for application variables; third-party standard names (e.g. `ANTHROPIC_API_KEY`)
-  are read as-is.
+- Prefix `VO_` for application variables, applied through the validation alias so that a
+  missing or invalid variable is reported by its environment name (`VO_DATABASE_URL`);
+  third-party standard names (e.g. `ANTHROPIC_API_KEY`) are read as-is.
 - Secrets use `SecretStr` and are never logged.
-- `Settings` is created once in the app lifespan and injected; never imported as a global.
+- `Settings` is created once by the `main.create_app()` factory when uvicorn starts, passed
+  to `api.app.create_app(settings)` and kept on `app.state`; never imported as a global.
 
 ---
 

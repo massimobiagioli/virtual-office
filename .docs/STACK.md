@@ -109,6 +109,7 @@ Mandatory in `docker-compose.yml`:
 
 ### 2.3 Dockerfile rules
 
+- Dockerfile frontend: `docker/dockerfile:1.28.0` (`# syntax=` line, pinned with digest).
 - Multi-stage builds; final stage contains only runtime artifacts.
 - Python images: build stage uses `uv` from `ghcr.io/astral-sh/uv:0.13.1` (copied binary),
   `uv sync --frozen --no-dev`; runtime stage copies the virtualenv; `PYTHONDONTWRITEBYTECODE=1`,
@@ -237,6 +238,7 @@ root ([ADR-0004](adr/0004-per-service-python-projects.md)).
 | ----------------------- | ---------------------------- | --------- | ----- |
 | Runtime                 | CPython                      | 3.15.0    | Released 2026-10-09; native wheels verified for `pydantic-core`, `asyncpg`, `uvloop`, `httptools` |
 | Package/env manager     | uv                           | 0.13.1    | One `uv.lock` per service, committed; `uv sync --frozen` in Docker |
+| Build backend           | uv_build                     | 0.13.1    | `[build-system]` of each service; same version as uv |
 | Web framework           | FastAPI                      | 0.143.3   | REST + WebSocket; OpenAPI is the contract source |
 | ASGI server             | uvicorn                      | 0.54.0    | With `uvloop` + `httptools` |
 | Validation / models     | Pydantic                     | 2.14.1    | DTOs, event payloads, settings, catalog definitions |

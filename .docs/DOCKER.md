@@ -62,7 +62,8 @@ Every build context has a `.dockerignore` that excludes at least: `.git`, `node_
 
 ### 4.1 Common rules (every Dockerfile)
 
-- First line: `# syntax=docker/dockerfile:<pinned version>` (exact version, never `1`).
+- First line: `# syntax=docker/dockerfile:<pinned version>@sha256:<digest>` (exact version from
+  STACK.md §2.3 plus digest, never `1`).
 - **Multi-stage**: `base` → `deps` → `build` → `runtime` (and `dev` target for the dev overlay).
 - **Non-root**: create a dedicated user with fixed UID/GID `10001:10001`; `USER 10001` in
   runtime stages.
@@ -107,20 +108,23 @@ COPY --from=build --chown=10001:10001 /app /app
 ENV PATH="/app/.venv/bin:${PATH}"
 USER 10001
 EXPOSE 8000
-ENTRYPOINT ["uvicorn", "virtual_office.main:app", "--host", "0.0.0.0", "--port", "8000", \
-            "--proxy-headers", "--forwarded-allow-ips", "*", "--no-server-header"]
+ENTRYPOINT ["uvicorn", "virtual_office.main:create_app", "--factory", "--host", "0.0.0.0", \
+            "--port", "8000", "--proxy-headers", "--forwarded-allow-ips", "*", "--no-server-header"]
 
 FROM build AS dev
 RUN --mount=type=cache,target=/root/.cache/uv uv sync --frozen
 COPY --from=uv /uv /usr/local/bin/uv
 USER 10001
-ENTRYPOINT ["uvicorn", "virtual_office.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+ENTRYPOINT ["uvicorn", "virtual_office.main:create_app", "--factory", "--host", "0.0.0.0", \
+            "--port", "8000", "--reload"]
 ```
 
 - The build context is the **service folder** (`services/core/`, `services/agents-catalog/`):
   each service is an independent uv project with its own `pyproject.toml` and `uv.lock`, and
   no Python manifest exists at the repository root
   ([ADR-0004](adr/0004-per-service-python-projects.md)).
+- uvicorn starts the app through the `create_app` **factory** (`--factory`): settings are read
+  from the environment when the server starts, never at import time (BACKEND.md §4.3).
 - Same image runs the one-off jobs (`alembic upgrade head`, `rebuild-projections`, seeds) by
   overriding `command`.
 
