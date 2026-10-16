@@ -18,6 +18,7 @@ in the same change.
 | ADR-0006 | [US-01.02: Core settings named by env variable, uvicorn app factory, uv_build backend](0006-us-01-02-core-settings-and-app-factory.md) | Proposed | 2026-10-16 | — | — |
 | ADR-0007 | [Amend Constitution: rename the `agents-catalog` service to `catalog`](0007-amend-constitution-rename-agents-catalog-to-catalog.md) | Accepted | 2026-10-16 | — | — |
 | ADR-0008 | [US-01.03: Catalog service mirrors core, with database-only settings and a writable uv cache in dev images](0008-us-01-03-catalog-mirrors-core-with-minimal-settings.md) | Proposed | 2026-10-16 | — | — |
+| ADR-0009 | [US-01.04: Quality gates as identical tool configuration plus stdlib repository scripts](0009-us-01-04-quality-gates-as-tool-config-and-stdlib-scripts.md) | Proposed | 2026-10-16 | — | — |
 
 ## Status legend
 
