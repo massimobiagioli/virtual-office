@@ -84,29 +84,29 @@ Renovate configuration, `.env.example`, `.gitignore`, `.editorconfig`.
 - **Story:** As a backend developer, I want the `core` package with the exact layered layout of
   BACKEND.md §2, so that every future module has an obvious home.
 - **Acceptance criteria:**
-  - [ ] AC1 — Given `services/core/src/virtual_office/`, when listed, then it contains `domain/{shared,
+  - [x] AC1 — Given `services/core/src/virtual_office/`, when listed, then it contains `domain/{shared,
     kanban,staff,intake,decisions}`, `application/`, `agents/`, `infrastructure/`, `api/`,
     `settings.py`, `main.py`, each with an `__init__.py`.
-  - [ ] AC2 — Given `main.py`, when imported, then `create_app()` returns a FastAPI app with no routes
+  - [x] AC2 — Given `main.py`, when imported, then `create_app()` returns a FastAPI app with no routes
     except health placeholders (added in WP02).
-  - [ ] AC3 — Given `settings.py`, when instantiated without required env vars, then it fails with a
+  - [x] AC3 — Given `settings.py`, when instantiated without required env vars, then it fails with a
     clear validation error naming the missing `VO_*` variables.
-  - [ ] AC4 — Given `services/core/tests/`, when `pytest` runs, then one smoke test (`test_app_factory`)
+  - [x] AC4 — Given `services/core/tests/`, when `pytest` runs, then one smoke test (`test_app_factory`)
     passes.
-  - [ ] AC5 — Given `services/core/pyproject.toml`, when inspected, then `requires-python` is pinned
+  - [x] AC5 — Given `services/core/pyproject.toml`, when inspected, then `requires-python` is pinned
     to the STACK.md minor, `[tool.uv] required-version` equals the STACK.md uv version, and every
     direct dependency (runtime and `dev` group) is pinned `==` to STACK.md; `uv lock --check` and
     `uv sync --frozen` succeed from the service folder in the container (ADR-0004).
-  - [ ] AC6 — Given `services/core/Dockerfile` (multi-stage, base images pinned by tag and digest,
+  - [x] AC6 — Given `services/core/Dockerfile` (multi-stage, base images pinned by tag and digest,
     non-root UID 10001, `.dockerignore`) and the `core` service in `docker-compose.yml`
     (`build.context: services/core`, required `VO_*` variables), when `make up` runs, then the
     image builds and `make status` shows `core` running.
 - **Tasks:**
-  - [ ] Create package tree, `pyproject.toml` (`name = "virtual-office-core"`, `dev` group with
+  - [x] Create package tree, `pyproject.toml` (`name = "virtual-office-core"`, `dev` group with
     ruff, mypy, import-linter, pytest, pytest-cov, hypothesis) and commit `uv.lock`.
-  - [ ] Implement `Settings` (pydantic-settings, `VO_` prefix, frozen, `extra="forbid"`).
-  - [ ] Implement `create_app()` with lifespan stub.
-  - [ ] Add `tests/unit/test_app_factory.py`.
+  - [x] Implement `Settings` (pydantic-settings, `VO_` prefix, frozen, `extra="forbid"`).
+  - [x] Implement `create_app()` with lifespan stub.
+  - [x] Add `tests/unit/test_app_factory.py`.
 - **Tests:** unit smoke test; settings validation test.
 - **Done when:** `pytest` green for `core`.
 
