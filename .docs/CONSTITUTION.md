@@ -4,7 +4,7 @@
 | ---------------- | ------------------------------------------------------------ |
 | Product name     | **Virtual Office**                                           |
 | Dashboard name   | **My Workbench**                                             |
-| Document status  | Ratified (v3.1.1)                                            |
+| Document status  | Ratified (v3.1.2)                                            |
 | Ratified on      | 2026-10-16                                                   |
 | Owner            | Project owner (human)                                        |
 | Applies to       | Every human and AI contributor, every line of code, every document, every asset in this repository |
@@ -1217,7 +1217,7 @@ Adding any audio requires a MAJOR amendment of this Constitution.
 | Layer               | Choice (details and versions in STACK.md)                                |
 | ------------------- | ------------------------------------------------------------------------ |
 | Deployment          | **Everything dockerized**, orchestrated by Docker Compose                 |
-| Services            | `frontend`, `core`, `agents-catalog`, `ollama`, `postgres`                |
+| Services            | `frontend`, `core`, `catalog`, `ollama`, `postgres`                       |
 | Frontend            | **TypeScript + Vue 3 + Vite**, Pinia, hand-built Amiga UI kit            |
 | Office renderer     | **PixiJS 8** canvas inside one Vue component + in-house office engine     |
 | Backend             | **Python + FastAPI + Pydantic**                                          |
@@ -1233,7 +1233,7 @@ Adding any audio requires a MAJOR amendment of this Constitution.
 | ---------------- | -------------------------------------------------------------------------------------- |
 | `frontend`       | My Workbench SPA; reverse proxy of `/api` and `/ws` to `core`                           |
 | `core`           | Domain, application, Orchestrator, agent runtime, event store, REST + WebSocket API     |
-| `agents-catalog` | Versioned role definitions, prompts, toolsets, model assignments, character catalog, eval sets |
+| `catalog`        | Versioned role definitions, prompts, toolsets, model assignments, character catalog, eval sets |
 | `ollama`         | Local LLM inference                                                                    |
 | `postgres`       | Databases `core` and `catalog` (a service never touches another service's database)    |
 
@@ -1258,7 +1258,7 @@ virtual-office/
 │   │   ├── agents/           # Pydantic AI agents per role, tools, output models, context packs
 │   │   ├── infrastructure/   # Postgres event store, projections, catalog client, LLM providers, git
 │   │   └── api/              # FastAPI routers, WebSocket gateway
-│   └── agents-catalog/
+│   └── catalog/
 │       └── catalog/          # Source files: role YAML, prompts/<role>/v<N>.md, characters, evals
 ├── assets/                   # Sprites, tiles, maps, fonts (+ LICENSES.md, src/)
 └── e2e/                      # Playwright tests against the compose stack
@@ -1291,7 +1291,7 @@ flowchart TB
     Agents --> Ports
   end
   Ports --> PG[(postgres: core db)]
-  Ports --> CAT[agents-catalog]
+  Ports --> CAT[catalog]
   Ports --> OLL[ollama / optional cloud LLM]
   Ports --> GIT[Git workspaces]
 ```
@@ -1325,7 +1325,7 @@ are coordinated by an application service inside **one Postgres transaction**.
 - Each agent action is a **job**: `{jobId, agentId, kind, input, status}` with kinds such as
   `process-note`, `triage`, `plan-card`, `implement-card`, `design-card`, `architect-card`,
   `review-card`, `answer-chat`.
-- Jobs run as Pydantic AI agent runs with: the role definition resolved from `agents-catalog`
+- Jobs run as Pydantic AI agent runs with: the role definition resolved from `catalog`
   (versioned instructions, toolset, model), a context pack built from projections, typed `deps`
   exposing only the role's ports, and a Pydantic `output_type` (structured output).
 - Jobs are resumable: progress checkpoints are events (`AgentJobProgressed`); on server restart,
@@ -1411,7 +1411,7 @@ consumes generated TypeScript types. CI fails if the generated types drift.
 2. **Models.** Configurable per role, pinned by explicit tag (never `latest`), defaults listed
    in STACK.md §6; model identifiers live in configuration, never in domain code.
 3. **Prompts are code.** Role definitions and prompts live in
-   `services/agents-catalog/catalog/` (`prompts/<role>/v<N>.md`), are reviewed like code,
+   `services/catalog/catalog/` (`prompts/<role>/v<N>.md`), are reviewed like code,
    immutable once published, and the version used is recorded in every job event.
 4. **Structured outputs.** Every job declares a Pydantic `output_type`; responses that fail
    validation are retried once with the validation error; then the job fails gracefully.
@@ -1422,7 +1422,7 @@ consumes generated TypeScript types. CI fails if the generated types drift.
    authority.
 7. **Budgets & limits.** Max tokens per call, per job, per project per month; hard stop at
    limits; costs are recorded per event.
-8. **Evaluation.** Each role has an evaluation set (`services/agents-catalog/catalog/evals/<role>/`) of
+8. **Evaluation.** Each role has an evaluation set (`services/catalog/catalog/evals/<role>/`) of
    input/expected-property cases (e.g. "a 3-feature note yields ≥ 3 cards with acceptance
    criteria"). Prompt changes MUST run the evals and not regress.
 9. **Determinism for tests.** Domain and application tests MUST NOT call real LLMs.
@@ -1562,6 +1562,7 @@ consumes generated TypeScript types. CI fails if the generated types drift.
 | 3.0.0   | 2026-10-16 | ADR-0003 | Audio removed entirely: new §14.10 "No audio" (owner decision) |
 | 3.1.0   | 2026-10-16 | ADR-0003 | ADR after every user story and work package (§12.5); Article XXII delegates the detailed plan to `.project/ROADMAP.md` with READY/PROCESSING/DONE execution files |
 | 3.1.1   | 2026-10-16 | ADR-0004 | §15.2 layout clarified: root holds only `docker-compose*.yml`, `Makefile`, `.env.example`; each subproject owns its manifest, lockfile and Dockerfile |
+| 3.1.2   | 2026-10-16 | ADR-0007 | Service `agents-catalog` renamed `catalog` (§15.1, §15.2, §15.3, §15.6, Article XVI); no rule changed |
 
 ---
 
