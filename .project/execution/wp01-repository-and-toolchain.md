@@ -138,24 +138,24 @@ Renovate configuration, `.env.example`, `.gitignore`, `.editorconfig`.
 - **Story:** As a tech lead, I want ruff, mypy strict and import-linter configured identically
   in both services, so that the hexagonal rules are enforced from the first line of code.
 - **Acceptance criteria:**
-  - [ ] AC1 — Given a service config, when `ruff check` runs, then the rule sets of BACKEND.md §3 are
+  - [x] AC1 — Given a service config, when `ruff check` runs, then the rule sets of BACKEND.md §3 are
     active (verified by a fixture file with a `print` call failing T20).
-  - [ ] AC2 — Given a service config, when `mypy` runs, then `strict = true` and the pydantic plugin are
+  - [x] AC2 — Given a service config, when `mypy` runs, then `strict = true` and the pydantic plugin are
     active for both services.
-  - [ ] AC3 — Given the import-linter contracts of BACKEND.md §2.1, when a test fixture module in
+  - [x] AC3 — Given the import-linter contracts of BACKEND.md §2.1, when a test fixture module in
     `domain` imports `sqlalchemy`, then `lint-imports` fails; when removed, it passes.
-  - [ ] AC4 — Given the coverage config, when `pytest --cov` runs, then per-package thresholds of
+  - [x] AC4 — Given the coverage config, when `pytest --cov` runs, then per-package thresholds of
     Constitution §18.2 are configured (domain 95, application 90, others 70).
-  - [ ] AC5 — Given the two service `pyproject.toml` files, when their tool sections differ beyond
+  - [x] AC5 — Given the two service `pyproject.toml` files, when their tool sections differ beyond
     package names and paths, then the drift check fails (ADR-0004).
-  - [ ] AC6 — Given a direct pin, `requires-python` or `required-version` that differs from
+  - [x] AC6 — Given a direct pin, `requires-python` or `required-version` that differs from
     STACK.md §5, when the pin check (`scripts/`, stdlib, `python -I`) runs, then it fails with
     file and requirement; on the skeleton it passes.
 - **Tasks:**
-  - [ ] `[tool.ruff]`, `[tool.ruff.lint]`, `[tool.ruff.format]` sections.
-  - [ ] `[tool.mypy]` strict + plugins.
-  - [ ] `[tool.importlinter]` contracts for both services.
-  - [ ] `[tool.pytest.ini_options]` (markers `integration`, `eval`; anyio) and `[tool.coverage]`.
+  - [x] `[tool.ruff]`, `[tool.ruff.lint]`, `[tool.ruff.format]` sections.
+  - [x] `[tool.mypy]` strict + plugins.
+  - [x] `[tool.importlinter]` contracts for both services.
+  - [x] `[tool.pytest.ini_options]` (markers `integration`, `eval`; anyio) and `[tool.coverage]`.
 - **Tests:** negative fixtures executed in a dedicated test that runs the tools via subprocess
   (marked `tooling`).
 - **Done when:** all tools pass on the skeleton and fail on the negative fixtures.
