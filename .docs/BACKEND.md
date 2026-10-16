@@ -39,11 +39,14 @@ Rules:
 
 1. **`src/` layout** for every service; tests live outside the package.
 2. Direct dependencies pinned with `==` in the service `pyproject.toml`; dev tools in a
-   `[dependency-groups] dev` group. Never add a dependency without updating STACK.md.
+   `[dependency-groups] dev` group. Never add a dependency without updating STACK.md:
+   `scripts/check_python_pins.py` fails on any pin, `requires-python` or `required-version`
+   that differs from STACK.md §5.
 3. Tool configuration (`ruff`, `mypy`, `pytest`, `coverage`, `importlinter`) lives in each
    service `pyproject.toml` and is **identical** in both services except for package names
-   and paths; a tooling check fails on drift. `[tool.uv] required-version` pins the STACK.md
-   uv version.
+   and paths; `scripts/check_service_config_drift.py` fails on drift (import-linter contracts
+   are exempt: they follow each service's layers). `[tool.uv] required-version` pins the
+   STACK.md uv version.
 4. `requires-python` is the exact minor of the runtime in STACK.md (e.g. `">=3.15,<3.16"`).
 5. All commands run inside the service container (see [DOCKER.md](DOCKER.md)), from the
    service folder (`uv sync --frozen`, `uv lock --check`); the host has no Python toolchain
@@ -125,6 +128,11 @@ modules = [
 
 Contexts talk to each other only through `domain.shared` types (ids, events) or application
 services.
+
+`include_external_packages = true` is required for the forbidden contract on third-party
+modules. `catalog` has the same "Domain is pure" contract and a three-layer contract
+(`catalog.api | catalog.infrastructure` → `catalog.application` → `catalog.domain`); it has no
+`agents` layer and no bounded contexts.
 
 ---
 
@@ -433,11 +441,41 @@ async def test_qa_rejects_when_a_criterion_fails(qa_agent, qa_deps):
 | Contract     | `tests/contract/`            | OpenAPI snapshot                    | Breaking API changes fail unless intentional |
 
 - Test names: `test_<behavior>_when_<condition>`.
-- Markers: `@pytest.mark.integration`, `@pytest.mark.eval` (excluded by default).
-- Async tests use the **anyio** pytest plugin (`@pytest.mark.anyio`), backend `asyncio`.
+- Markers: `@pytest.mark.integration`, `@pytest.mark.eval`, `@pytest.mark.tooling` (excluded
+  by default; run with `-m <marker>`). `tests/tooling/` runs every quality tool on the service
+  and on negative fixtures written to a temporary folder (a rule that cannot fail is not a rule).
+- Async tests use the **anyio** pytest plugin (`@pytest.mark.anyio`); the session fixture
+  `anyio_backend` in `tests/conftest.py` returns `"asyncio"`.
 - Factories with polyfactory in `tests/factories/`; no hand-built giant fixtures.
-- Coverage thresholds from Constitution §18.2 enforced by `pytest-cov` (`--cov-fail-under`
-  per package via separate runs).
+- Coverage thresholds from Constitution §18.2: branch coverage with `fail_under = 70` in each
+  `pyproject.toml` (`source_pkgs` = the service package), and the per-layer thresholds (domain
+  95 %, application 90 %, every other layer 70 %) checked on the JSON report by
+  `scripts/check_coverage.py`.
+
+### 11.1 Quality gate commands
+
+From the service folder, in the service toolchain container:
+
+```bash
+uv sync --frozen && uv lock --check
+ruff check . && ruff format --check .
+mypy
+lint-imports
+pytest --cov --cov-report=json          # writes coverage.json (git-ignored)
+pytest -m tooling                       # tools fire on the negative fixtures
+```
+
+From the repository root, with any Python 3.15 (stdlib only):
+
+```bash
+python -I scripts/check_coverage.py services/<service>/coverage.json --package <package>
+python -I scripts/check_service_config_drift.py
+python -I scripts/check_python_pins.py
+```
+
+`scripts/` is linted with the core rules (`scripts/ruff.toml` extends
+`services/core/pyproject.toml`); its tests run with `pytest scripts/tests` from a service
+toolchain container with the repository mounted.
 
 ---
 
