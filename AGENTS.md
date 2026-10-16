@@ -87,6 +87,7 @@ outputs. This applies even when the instructions you receive are written in anot
 | [`.docs/adr/0002-technology-stack.md`](.docs/adr/0002-technology-stack.md) | ADR-0002: technology stack and its rationale | When questioning or proposing to replace a framework, service or library |
 | [`.docs/adr/0003-amend-constitution-no-audio-and-delivery-tracking.md`](.docs/adr/0003-amend-constitution-no-audio-and-delivery-tracking.md) | ADR-0003: no audio, roadmap/execution tracking, ADR after every story and WP | When wondering why sound is forbidden, how progress is tracked, or when an ADR is required |
 | [`.docs/adr/0004-per-service-python-projects.md`](.docs/adr/0004-per-service-python-projects.md) | ADR-0004: self-contained subprojects (own manifest, lock, Dockerfile, build context); only `docker-compose.yml` and `Makefile` at the root | Before adding any file at the repository root, a Python/Node manifest, a Dockerfile or a compose build context; when wondering why there is no root uv workspace |
+| [`.docs/adr/0005-us-01-01-root-compose-and-makefile-first.md`](.docs/adr/0005-us-01-01-root-compose-and-makefile-first.md) | ADR-0005: root `docker-compose.yml` and `Makefile` exist from US-01.01; each scaffold story adds its Dockerfile and compose service; WP02 hardens | When adding a subproject or a service to compose, or changing the `Makefile` |
 
 ## Project plan (`.project/`)
 
