@@ -289,3 +289,42 @@ UID 10001), dev-image `uv` commands — all pass.
 `catalog` everywhere. Done in 805969d (folder, package, image, compose, docs, branch renamed
 to `feat/us-01-03-catalog-service-package`) and 055be61 (Constitution v3.1.2, ADR-0007).
 Accepted ADR-0004 keeps the old name by rule. Not reviewed yet: needs Round 2.
+
+### Round 2 · 2026-10-16 · branch `feat/us-01-03-catalog-service-package` · head `21dd4a3`
+
+Focus: the owner-requested rename `agents-catalog` → `catalog` (805969d, 055be61) and the R1
+fix that touched `services/core/Dockerfile`.
+
+**Verdict:** APPROVED
+
+**Quality gate**
+
+| Gate | Result |
+| ---- | ------ |
+| catalog: `uv lock --check`, `uv sync --frozen` (tool container and `dev` image as UID 10001) | pass |
+| catalog: ruff check, ruff format --check, mypy strict + pydantic plugin | pass (12 files) |
+| catalog: pytest | 19 passed; coverage 100 % with `--cov=src/catalog` (bare `--cov=catalog` hits the definitions folder, see ADR-0007) |
+| core: `uv lock --check`, ruff, ruff format, mypy strict + plugin, pytest (`conftest.py` URL changed) | pass; 19 passed, coverage 100 % |
+| core: `dev` image `uv lock --check` / `uv sync --frozen` as UID 10001 | pass |
+| `docker compose config`, `make up`, `make status` (`catalog` + `core` Up, UID 10001), `make down` | pass |
+| Relative Markdown links in the repository | pass (0 broken) |
+| `git grep -E "agents[-_]catalog"` | only accepted ADR-0004, ADR-0007 (file, registry, AGENTS.md), the Amendment Log row and this review history |
+| Conventional Commits ≤ 72 chars | pass |
+| lint-imports, pin/drift check, `no-latest`, healthcheck, frontend gates, Playwright | not available (US-01.04, US-01.09, WP02, US-01.05+) |
+
+**Acceptance** — AC1–AC5 hold under the new name: `services/catalog/src/catalog/`,
+`services/catalog/catalog/{roles,prompts,characters,evals}`, `services/catalog/Dockerfile`,
+compose service `catalog` with `build.context: services/catalog`. The story text in the WP
+file and ROADMAP now reads "Scaffold the `catalog` service package".
+
+**Findings**
+
+None open.
+
+**Notes**
+
+- The Constitution was amended in the same change (PATCH v3.1.2, ADR-0007 marked Accepted as
+  the owner's direct instruction); the owner should confirm that status.
+- ADR-0007's compliance grep also matches this review file's history; harmless.
+- US-01.04 must configure coverage with `source_pkgs = ["catalog"]` or a path, not a bare
+  `catalog` source.
