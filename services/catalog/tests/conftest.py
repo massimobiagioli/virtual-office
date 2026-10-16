@@ -8,6 +8,12 @@ REQUIRED_ENVIRONMENT = {
 OPTIONAL_VARIABLES = ("VO_LOG_LEVEL",)
 
 
+@pytest.fixture(scope="session")
+def anyio_backend() -> str:
+    """Async tests run on asyncio only (BACKEND.md §11)."""
+    return "asyncio"
+
+
 @pytest.fixture
 def no_catalog_environment(monkeypatch: pytest.MonkeyPatch) -> None:
     """No `VO_*` variable is set, whatever the ambient environment holds."""
