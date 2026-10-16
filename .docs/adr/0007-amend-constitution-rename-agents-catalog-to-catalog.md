@@ -60,8 +60,7 @@ We will name the service `catalog` everywhere:
 
 ## Compliance
 
-- `git grep -E "agents[-_]catalog"` finds only accepted ADR-0004, this ADR (file, registry and AGENTS.md
-  entries) and the Amendment
-  Log row.
+- `git grep -E "agents[-_]catalog"` finds only accepted ADR-0004, this ADR (file, registry and
+  AGENTS.md entries) and the Amendment Log row.
 - `make up` → `make status` shows `catalog` running next to `core`; the catalog tests import
   `catalog.*`.
