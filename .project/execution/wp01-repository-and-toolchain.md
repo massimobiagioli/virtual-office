@@ -17,7 +17,7 @@ Status legend: file status `READY` → `PROCESSING` → `DONE`; check a story on
 acceptance criteria and tasks are checked, merged, and its ADR is written.
 
 - [x] US-01.01 — Root `docker-compose.yml` and `Makefile` (2 pts) · ADR: ADR-0005
-- [ ] US-01.02 — Scaffold the `core` service package (3 pts)
+- [x] US-01.02 — Scaffold the `core` service package (3 pts) · ADR: ADR-0006
 - [ ] US-01.03 — Scaffold the `agents-catalog` service package (2 pts)
 - [ ] US-01.04 — Configure quality tools and architecture contracts (3 pts)
 - [ ] US-01.05 — Scaffold the Vue + Vite application (3 pts)
@@ -80,7 +80,7 @@ Renovate configuration, `.env.example`, `.gitignore`, `.editorconfig`.
 
 #### US-01.02 — Scaffold the `core` service package
 
-- [ ] **US-01.02 completed** · **Points:** 3 · **Priority:** Must · **ADR:** —
+- [x] **US-01.02 completed** · **Points:** 3 · **Priority:** Must · **ADR:** ADR-0006
 - **Story:** As a backend developer, I want the `core` package with the exact layered layout of
   BACKEND.md §2, so that every future module has an obvious home.
 - **Acceptance criteria:**
