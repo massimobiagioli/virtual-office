@@ -219,3 +219,60 @@ pytest 19 passed (coverage 100 %), `docker compose config` — all pass.
   DOCKER.md and BACKEND.md were updated in the same branch.
 - New pins recorded in STACK.md: `uv_build 0.13.1`, `docker/dockerfile 1.28.0`.
 - Compose security defaults, healthcheck and network are deliberately left to WP02 (ADR-0005).
+
+## US-01.03 — Scaffold the `agents-catalog` service package
+
+### Round 1 · 2026-10-16 · branch `feat/us-01-03-agents-catalog-service-package` · head `1832ef3`
+
+**Verdict:** APPROVED
+
+**Quality gate**
+
+Run in a throwaway container from the pinned `python:3.15.0-slim-trixie` + `uv 0.13.1` images
+and in the `dev` target of `services/agents-catalog/Dockerfile`. Host: Docker Engine 24.0.7 /
+Compose v2.23.3 (below DOCKER.md §1 minimum; all commands still succeeded).
+
+| Gate | Result |
+| ---- | ------ |
+| `uv lock --check` | pass (tool container and `dev` image) |
+| `uv sync --frozen` (image build `--no-dev`, dev group) | pass |
+| ruff check (default rules; BACKEND.md §3 rule sets arrive in US-01.04) | pass |
+| ruff format --check (line length 100) | pass |
+| mypy --strict with the pydantic plugin (ad-hoc config, as in US-01.02) | pass (12 files) |
+| pytest (19 tests) | pass |
+| coverage | 100 % (thresholds configured in US-01.04) |
+| lint-imports | not available (contracts arrive in US-01.04) |
+| pin check / drift check | not available (US-01.04 AC5–AC6); manual diff of the two `pyproject.toml`: only name, description, `module-name` differ |
+| `docker compose config`, `make up`, `make status` (`agents-catalog` Up next to `core`, UID 10001, uvicorn on 8001), `make down` | pass |
+| healthcheck, Playwright | not available (WP02, WP14+) |
+| `no-latest` script | not available (US-01.09); manual grep on the changed code files: 0 hits |
+| frontend gates | not available (US-01.05–07) |
+
+**Acceptance**
+
+- AC1 — `domain/`, `application/`, `infrastructure/`, `api/` packages, `settings.py`, `main.py`;
+  `tests/unit/test_package_layout.py` (`test_layered_package_exists`, `test_entry_module_exists`).
+- AC2 — `catalog/{roles,prompts,characters,evals}/.gitkeep`;
+  `test_catalog_source_folder_is_tracked`.
+- AC3 — `tests/unit/test_app_factory.py` (factory, injected/env settings, lifespan).
+- AC4 — `requires-python = ">=3.15,<3.16"`, `required-version = "==0.13.1"`, every direct dep
+  `==` STACK.md §5 (same pins as `core`); lock check and frozen sync pass.
+- AC5 — `services/agents-catalog/Dockerfile` mirrors `core` (tag + digest pins, UID 10001,
+  `--factory`); `docker-compose.yml` `agents-catalog` with `build.context: services/agents-catalog`.
+
+**Findings**
+
+- [ ] **R1 · Minor** — `services/agents-catalog/Dockerfile:41` (and `services/core/Dockerfile:41`)
+  — the `dev` target runs as UID 10001 with no home directory, so any `uv` command in the
+  toolchain image (`uv lock --check`, `uv sync --frozen`, BACKEND.md §1 rule 5) fails with
+  `Failed to initialize cache at /home/app/.cache/uv: Permission denied` unless
+  `UV_CACHE_DIR` is overridden. Suggested fix: set `UV_CACHE_DIR=/tmp/uv-cache` in the `dev`
+  stage of both Dockerfiles (they must stay identical, ADR-0004).
+- [ ] **R2 · Nit** — `services/agents-catalog/pyproject.toml:4` — description is 117 characters,
+  over the 100-column convention. Suggested fix: shorten it.
+
+**Notes**
+
+- Settings deliberately carry only `VO_DATABASE_URL` (required) and `VO_LOG_LEVEL`: the
+  catalog calls no other service. `.env.example` (US-01.08) must list them.
+- `core`'s `VO_CATALOG_URL` (`http://agents-catalog:8001/`) now points at a running service.
