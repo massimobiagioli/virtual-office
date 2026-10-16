@@ -396,3 +396,28 @@ Run in a throwaway container from the pinned `python:3.15.0-slim-trixie` + `uv 0
 
 **Rework:** 2026-10-16 · head caf126b · gates: scripts ruff, ruff format, mypy strict pass;
 `pytest scripts/tests` 22 passed; core pytest + `check_coverage.py` on the real report exit 0.
+
+### Round 2 · 2026-10-16 · branch `feat/us-01-04-quality-tools-and-contracts` · head `a59db96`
+
+Focus: the R1/R2 fix (caf126b).
+
+**Verdict:** APPROVED
+
+**Quality gate**
+
+| Gate | Result |
+| ---- | ------ |
+| scripts: ruff check, ruff format --check, mypy strict | pass |
+| `pytest scripts/tests` | 22 passed (R1 and R2 tests fail on the previous code, pass now) |
+| core pytest + `check_coverage.py` on the real JSON report | pass (exit 0) |
+| service gates (ruff, mypy, lint-imports, pytest, `-m tooling`) | unchanged since Round 1 (no service file touched); pass |
+| `no-latest`, frontend gates, healthcheck, Playwright | not available |
+
+**Findings**
+
+None open.
+
+**Notes**
+
+- A package whose modules are all empty is measured as nothing and passes without output;
+  correct for the skeleton, and any real statement makes the layer appear.
