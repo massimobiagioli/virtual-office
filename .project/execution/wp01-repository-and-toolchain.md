@@ -19,7 +19,7 @@ acceptance criteria and tasks are checked, merged, and its ADR is written.
 - [x] US-01.01 — Root `docker-compose.yml` and `Makefile` (2 pts) · ADR: ADR-0005
 - [x] US-01.02 — Scaffold the `core` service package (3 pts) · ADR: ADR-0006
 - [x] US-01.03 — Scaffold the `catalog` service package (2 pts) · ADR: ADR-0008
-- [ ] US-01.04 — Configure quality tools and architecture contracts (3 pts)
+- [x] US-01.04 — Configure quality tools and architecture contracts (3 pts) · ADR: ADR-0009
 - [ ] US-01.05 — Scaffold the Vue + Vite application (3 pts)
 - [ ] US-01.06 — Strict TypeScript and lint configuration (3 pts)
 - [ ] US-01.07 — Vitest setup with coverage (2 pts)
@@ -134,7 +134,7 @@ Renovate configuration, `.env.example`, `.gitignore`, `.editorconfig`.
 
 #### US-01.04 — Configure quality tools and architecture contracts
 
-- [ ] **US-01.04 completed** · **Points:** 3 · **Priority:** Must · **ADR:** —
+- [x] **US-01.04 completed** · **Points:** 3 · **Priority:** Must · **ADR:** ADR-0009
 - **Story:** As a tech lead, I want ruff, mypy strict and import-linter configured identically
   in both services, so that the hexagonal rules are enforced from the first line of code.
 - **Acceptance criteria:**
