@@ -391,6 +391,9 @@ Key decisions applied (no new decisions are taken in WP01):
   - `.editorconfig` (UTF-8, LF, final newline, 2 spaces TS/Vue/YAML/JSON/Markdown, 4 Python);
   - `.gitignore` (env files except example, caches, build outputs, virtualenvs, node_modules);
   - `.env.example` with every `VO_*` variable known at this time and a comment per variable;
+  - `scripts/check_env_example.py` (stdlib only, run with `python -I`) with
+    `scripts/tests/test_check_env_example.py`: `.env.example` lists every variable the
+    services' `Settings` and the compose files read, each commented, and nothing else;
   - `scripts/check_no_latest.py` (stdlib only, run with `python -I`), scanning manifests,
     lockfiles, Dockerfiles, compose files, workflows, `.env.example`, `models.lock`; excluding
     Markdown under `.docs/` and `.project/`; detecting `:latest`, `@latest`, `"latest"`,
