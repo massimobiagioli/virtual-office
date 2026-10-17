@@ -8,16 +8,20 @@ end_of_line = lf
 insert_final_newline = true
 trim_trailing_whitespace = true
 indent_style = space
+# ruff (line-length) and Prettier (printWidth) both wrap at 100.
+max_line_length = 100
 # TypeScript, Vue, JavaScript, JSON, YAML, Markdown, HTML, CSS and nginx configuration.
 indent_size = 2
 
-[*.{py,pyi,toml}]
+[{*.{py,pyi,toml},uv.lock}]
 # Python (PEP 8, ruff format) and TOML (pyproject.toml, uv.lock).
 indent_size = 4
 
 [*.md]
-# Trailing spaces can be meaningful in Markdown (hard line breaks, rulers in code blocks).
+# Trailing spaces can be meaningful in Markdown (hard line breaks, rulers in code blocks);
+# tables and links may run past 100 columns.
 trim_trailing_whitespace = false
+max_line_length = off
 
 [Dockerfile]
 # Continuation lines of RUN, LABEL and ENTRYPOINT (DOCKER.md §4).
