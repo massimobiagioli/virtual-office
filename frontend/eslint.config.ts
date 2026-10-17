@@ -33,7 +33,7 @@ const external = (...sources: string[]) => ({
 const frameworkPackages = ['vue', 'vue-router', 'pinia', '@vue/*']
 
 // No audio, ever (Constitution §14.10, FRONTEND.md §8.6): libraries, Web Audio, speech
-// synthesis, audio elements and <audio>/<video> with sound.
+// synthesis, audio files, audio elements and <audio>/<video> with sound.
 const noSound = 'Virtual Office never produces sound (Constitution §14.10).'
 const audioNames = [
   'Audio',
@@ -51,6 +51,12 @@ const audioProperties = ['window', 'globalThis', 'self'].flatMap((object) =>
 // A gitignore-style pattern also matches the subpaths of a package (`@pixi/sound/filters`).
 const audioImports = {
   group: ['@pixi/sound', 'howler', 'tone'],
+  message: noSound,
+}
+// Audio files, with or without a Vite query (`beep.mp3?url`), in any letter case.
+const audioFileImports = {
+  regex: String.raw`\.(aac|aif|aiff|flac|m4a|mid|midi|mp3|oga|ogg|opus|wav|weba)(\?.*)?$`,
+  caseSensitive: false,
   message: noSound,
 }
 const audioElementCreation = {
@@ -87,7 +93,10 @@ export default withVueTs(
       'no-restricted-syntax': ['error', audioElementCreation],
       'vue/no-restricted-html-elements': ['error', { element: ['audio'], message: noSound }],
       'vue/no-restricted-syntax': ['error', soundingVideo],
-      'no-restricted-imports': ['error', { patterns: [audioImports, pixiImports] }],
+      'no-restricted-imports': [
+        'error',
+        { patterns: [audioImports, audioFileImports, pixiImports] },
+      ],
     },
   },
   {
@@ -113,7 +122,7 @@ export default withVueTs(
     name: 'virtual-office/office-renderer',
     files: ['**/src/office-renderer/**'],
     rules: {
-      'no-restricted-imports': ['error', { patterns: [audioImports] }],
+      'no-restricted-imports': ['error', { patterns: [audioImports, audioFileImports] }],
     },
   },
   {
