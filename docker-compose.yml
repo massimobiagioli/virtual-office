@@ -20,7 +20,7 @@ services:
 
   core:
     # DOCKER.md §3 wants ${VO_IMAGE_TAG:?}; the `dev` default keeps `make status|logs|down`
-    # working on a clean clone until .env.example exists (US-01.08). WP02 makes it required.
+    # working on a clean clone without a `.env` (see .env.example). WP02 makes it required.
     image: virtual-office/core:${VO_IMAGE_TAG:-dev}
     build:
       context: services/core
@@ -30,6 +30,7 @@ services:
       VO_DATABASE_URL: postgresql+asyncpg://core_app@postgres:5432/core
       VO_CATALOG_URL: http://catalog:8001/
       VO_OLLAMA_BASE_URL: ${VO_OLLAMA_BASE_URL:-http://ollama:11434/}
+      VO_LOG_LEVEL: ${VO_LOG_LEVEL:-INFO}
 
   catalog:
     # Same temporary image tag default as core (ADR-0006); WP02 makes it required.
@@ -40,3 +41,4 @@ services:
     environment:
       # The catalog database arrives with postgres in WP02/WP04 (POSTGRES.md §2).
       VO_DATABASE_URL: postgresql+asyncpg://catalog_app@postgres:5432/catalog
+      VO_LOG_LEVEL: ${VO_LOG_LEVEL:-INFO}
