@@ -237,7 +237,7 @@ Renovate configuration, `.env.example`, `.gitignore`, `.editorconfig`.
 - **Acceptance criteria:**
   - [ ] AC1 — `.editorconfig` sets UTF-8, LF, final newline, 2 spaces for TS/Vue/YAML/JSON, 4 for Python.
   - [ ] AC2 — `.gitignore` ignores `.env`, build outputs, caches, `node_modules`, `.venv`.
-  - [ ] AC3 — `.env.example` lists every `VO_*` variable known so far, each with a comment, no real
+  - [x] AC3 — `.env.example` lists every `VO_*` variable known so far, each with a comment, no real
     secrets, and passes the `no-latest` check.
 - **Tasks:** write the three files.
 - **Tests:** `no-latest` check (US-01.09) covers `.env.example`.
