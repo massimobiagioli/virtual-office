@@ -441,7 +441,7 @@ Key decisions applied (no new decisions are taken in WP01):
 | `[tool.coverage]` | `branch = true`, source per package, `fail_under` per run |
 | `[tool.importlinter]` | the three contracts of BACKEND.md §2.1 for `core`, the layers contract for `catalog` |
 | `frontend/tsconfig.app.json` | every option of FRONTEND.md §2 |
-| `frontend/eslint.config.ts` | Vue + TS strict presets, boundaries, `no-restricted-imports` (`pixi.js`, `@pixi/sound`), `no-restricted-globals` (`Audio`, `AudioContext`) |
+| `frontend/eslint.config.ts` | Vue + TS strict presets, boundaries, `no-restricted-imports` (`pixi.js` outside `office-renderer`; audio libraries and audio files everywhere), the no-audio globals, properties, syntax and template rules (full list in FRONTEND.md §11) |
 | `frontend/.npmrc` | `save-exact=true`, `engine-strict=true` |
 | `.pre-commit-config.yaml` | every `rev:` an exact tag, never a branch |
 | `renovate.json` | `rangeStrategy: "pin"`, `pinDigests: true`, `schedule` weekly, ecosystem groups |
