@@ -1025,45 +1025,45 @@ Core and catalog `dev` images (repo mounted read-only), `frontend/Dockerfile` `d
 
 **Findings**
 
-- [ ] **R1 · Major** — `.docs/DOCKER.md:46-51` vs `.docs/DOCKER.md:235`, `.env.example:6-8,25` — the
+- [x] **R1 · Major** — `.docs/DOCKER.md:46-51` vs `.docs/DOCKER.md:235`, `.env.example:6-8,25` — the
   new text says services receive only their `environment:` keys and never read `.env`, while the
   §5.1 skeleton in the same guide gives `core` `env_file: [.env]`; the guide contradicts itself and
   the `.env.example` claim breaks once WP02 copies the skeleton (AGENTS.md rule 2). Suggested fix:
   drop `env_file` from the skeleton (list variables explicitly, §5.2 rule 6), or reword both texts
   to "today" with WP02 deciding; record the choice in the story ADR.
-  → Partly done in 2c008a7: §5.1 skeleton drops `env_file: [.env]` and lists the service variables (incl. `VO_LOG_LEVEL`), §2 text says "no `env_file:`"; the guide no longer contradicts itself. Recording the choice → Deferred to /feature-close (story ADR).
-- [ ] **R2 · Minor** — `.project/execution/wp01-repository-and-toolchain.md:240` — AC3 is ticked
+  → Partly done in 2c008a7: §5.1 skeleton drops `env_file: [.env]` and lists the service variables (incl. `VO_LOG_LEVEL`), §2 text says "no `env_file:`"; the guide no longer contradicts itself. Recording the choice → Done in ADR-0013.
+- [x] **R2 · Minor** — `.project/execution/wp01-repository-and-toolchain.md:240` — AC3 is ticked
   including "passes the `no-latest` check", which does not exist yet; only a substring stand-in
   (`test_check_env_example.py:59-63`) covers it (AGENTS.md rule 15). Suggested fix: note "verified
   by the stand-in test; re-verified in US-01.09" on the AC (and in the story ADR), and make sure
   US-01.09 scans the real `.env.example`.
-  → Partly done in 49f8f83: AC3 annotated (no-latest part verified by the stand-in test, re-verified in US-01.09) and US-01.09 tasks now require the real check to scan `.env.example`. Recording it → Deferred to /feature-close (story ADR).
+  → Partly done in 49f8f83: AC3 annotated (no-latest part verified by the stand-in test, re-verified in US-01.09) and US-01.09 tasks now require the real check to scan `.env.example`. Recording it → Done in ADR-0013.
 - [x] **R3 · Minor** — `scripts/check_env_example.py:94` — any `#` line counts as the variable's
   comment, so a bare `#` or a `# --- … ---` ruler passes (mutation survived); AC3 says "each with a
   comment". Suggested fix: require non-empty comment text that is not a ruler, with failing tests.
   → Resolved in 40bca9f: the comment block above an entry must contain words and not only a bare `#` or a `---`/`===` ruler; parametrized tests.
-- [ ] **R4 · Minor** — `scripts/check_env_example.py` (new), `.project/ROADMAP.md:390-399` — a new
+- [x] **R4 · Minor** — `scripts/check_env_example.py` (new), `.project/ROADMAP.md:390-399` — a new
   repository check beyond "write the three files" is a decision of its own (AGENTS.md rule 14,
   ADR-0009) and ROADMAP D01.3 does not list it. Suggested fix: record it in the story ADR and add it
   to the D01.3 contents.
-  → Partly done in 9fe67e2: ROADMAP D01.3 lists `scripts/check_env_example.py` and its test. The decision record → Deferred to /feature-close (story ADR).
+  → Partly done in 9fe67e2: ROADMAP D01.3 lists `scripts/check_env_example.py` and its test. The decision record → Done in ADR-0013.
 - [x] **R5 · Minor** — `.docs/STACK.md:375,382` — the §10 layout omits `.editorconfig` and
   `.gitignore` (ROADMAP:316 lists them) and the `scripts/` comment omits the env-example check.
   Suggested fix: update both lines.
   → Resolved in 9fe67e2: STACK.md §10 lists `.editorconfig · .gitignore` and the `scripts/` comment names the env-example check.
-- [ ] **R6 · Minor** — `docker-compose.yml:33,44` — `VO_LOG_LEVEL: ${VO_LOG_LEVEL:-INFO}` is
+- [x] **R6 · Minor** — `docker-compose.yml:33,44` — `VO_LOG_LEVEL: ${VO_LOG_LEVEL:-INFO}` is
   compose wiring beyond the story's three files and missing from the DOCKER.md §5.1 skeleton
   (`:-` is right for an optional variable). Suggested fix: add it to the skeleton and justify it in
   the story ADR as an extension of ADR-0006's temporary defaults.
-  → Partly done in 2c008a7: `VO_LOG_LEVEL: ${VO_LOG_LEVEL:-INFO}` added to the DOCKER.md §5.1 skeleton. Justification as an extension of ADR-0006's temporary defaults → Deferred to /feature-close (story ADR).
+  → Partly done in 2c008a7: `VO_LOG_LEVEL: ${VO_LOG_LEVEL:-INFO}` added to the DOCKER.md §5.1 skeleton. Justification as an extension of ADR-0006's temporary defaults → Done in ADR-0013.
 - [x] **R7 · Minor** — `.editorconfig:14-15` — the comment says the section covers `uv.lock`, but
   `[*.{py,pyi,toml}]` does not match it (uv.lock uses 4 spaces). Suggested fix:
   `[{*.{py,pyi,toml},uv.lock}]` or drop it from the comment.
   → Resolved in ba1ea2b: section is `[{*.{py,pyi,toml},uv.lock}]`.
-- [ ] **R8 · Minor** — `.editorconfig` vs Constitution §15.2 (`CONSTITUTION.md:1245`), ADR-0004 §3 —
+- [x] **R8 · Minor** — `.editorconfig` vs Constitution §15.2 (`CONSTITUTION.md:1245`), ADR-0004 §3 —
   the layout lists only orchestration files at the root. Suggested fix: state in the story ADR that
   repository-wide dotfiles (`.gitignore`, `.editorconfig`) are allowed at the root.
-  → Deferred to /feature-close (story ADR): only the ADR can state that repository-wide dotfiles are allowed at the root.
+  → Resolved in ADR-0013 (Decision 6): repository-wide dotfiles (`.gitignore`, `.editorconfig`) are allowed at the root.
 - [x] **R9 · Minor** — `scripts/check_env_example.py:46-48` — every annotated name in `Settings`
   becomes a variable: an annotated `model_config` or a `ClassVar` would yield `VO_MODEL_CONFIG`, and
   `Field(validation_alias=…)` (BACKEND.md §4.3 third-party names) would be wrongly prefixed.
