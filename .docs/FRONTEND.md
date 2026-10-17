@@ -307,7 +307,7 @@ Follow skill `building-office-scene` and STACK.md §4. Code rules:
     or `video` (any case) as a string or a static template literal; computed tag names are
     not caught and are checked in review. A muted `<video>` goes in a template;
   - `vue/no-restricted-html-elements`: `<audio>`; `vue/no-restricted-syntax`: `<video>`
-    without the static `muted` attribute.
+    without its own static `muted` attribute (a muted `<source>` child does not count).
 - Boundaries (`boundaries/dependencies`, `default: 'disallow'`):
   - "types" in §1.1 means `import type` only; `office-engine` takes types from
     `api/schema.d.ts` only, not from `api/types.ts`.

@@ -114,7 +114,7 @@ const lintExpectations: readonly LintExpectation[] = [
     line: 3,
     messageIncludes: noSound,
   },
-  ...[4, 5].map((line) => ({
+  ...[4, 5, 6].map((line) => ({
     file: fixture('windows/AudioWindow.vue'),
     ruleId: 'vue/no-restricted-syntax',
     line,
