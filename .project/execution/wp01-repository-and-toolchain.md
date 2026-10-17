@@ -211,12 +211,17 @@ Renovate configuration, `.env.example`, `.gitignore`, `.editorconfig`.
 - **Story:** As a frontend developer, I want Vitest with jsdom, @vue/test-utils and coverage
   thresholds, so that TDD works out of the box.
 - **Acceptance criteria:**
-  - [ ] AC1 — Given `vitest.config.ts`, when `pnpm test` runs, then tests in `src/**/*.spec.ts` run
+  - [x] AC1 — Given `vitest.config.ts`, when `pnpm test` runs, then tests in `src/**/*.spec.ts` run
     with jsdom and coverage v8.
-  - [ ] AC2 — Given coverage thresholds, when below 70 % globally (higher for `office-engine` later),
+  - [x] AC2 — Given coverage thresholds, when below 70 % globally (higher for `office-engine` later),
     then the run fails.
-  - [ ] AC3 — Given fast-check, when a sample property test runs, then it passes (proves wiring).
-- **Tasks:** config, sample tests, scripts `test`, `test:watch`, `coverage`.
+  - [x] AC3 — Given fast-check, when a sample property test runs, then it passes (proves wiring).
+- **Tasks:**
+  - [x] Config: `vitest.config.ts` with jsdom, v8 coverage over `src/**/*.{ts,vue}` and 70 %
+    global thresholds; `@vitest/coverage-v8` and `fast-check` pinned to STACK.md §3.
+  - [x] Sample tests: `shared/clamp.spec.ts` (examples + fast-check properties) and the
+    under-covered fixture asserted by `pnpm check:tooling`.
+  - [x] Scripts `test`, `test:watch`, `coverage`.
 - **Tests:** sample spec files.
 - **Done when:** `pnpm test` green with coverage report.
 
