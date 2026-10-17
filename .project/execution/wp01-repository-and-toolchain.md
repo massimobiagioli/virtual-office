@@ -173,13 +173,14 @@ Renovate configuration, `.env.example`, `.gitignore`, `.editorconfig`.
   - [x] AC2 — Given `package.json`, when inspected, then every dependency uses an exact version from
     STACK.md, `packageManager` pins pnpm, and `.npmrc` has `save-exact=true` and
     `engine-strict=true`.
-  - [ ] AC3 — Given `pnpm build`, when run in the build container, then a `dist/` with hashed assets is
+  - [x] AC3 — Given `pnpm build`, when run in the build container, then a `dist/` with hashed assets is
     produced and `App.vue` renders a placeholder "My Workbench" title.
-  - [ ] AC4 — Given `frontend/Dockerfile` (build stage pnpm, runtime nginx, both pinned by tag and
+  - [x] AC4 — Given `frontend/Dockerfile` (build stage pnpm, runtime nginx, both pinned by tag and
     digest) and the `frontend` service in `docker-compose.yml` (`build.context: frontend`,
     published only on `127.0.0.1:8080`), when `make up` runs, then `http://127.0.0.1:8080/`
     serves the "My Workbench" placeholder.
-- **Tasks:** create project files, `main.ts`, `App.vue`, Pinia and router registration.
+- **Tasks:**
+  - [x] Create project files, `main.ts`, `App.vue`, Pinia and router registration.
 - **Tests:** `App.spec.ts` renders the title.
 - **Done when:** build and test pass.
 

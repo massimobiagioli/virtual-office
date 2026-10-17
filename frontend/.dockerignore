@@ -1,0 +1,16 @@
+# Keep the frontend build context minimal (DOCKER.md §2).
+.git
+node_modules
+.pnpm-store
+dist
+coverage
+.vite
+*.tsbuildinfo
+.eslintcache
+.env*
+!.env.example
+*.log
+.docs
+.agents
+Dockerfile
+.dockerignore
