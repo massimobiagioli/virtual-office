@@ -143,3 +143,124 @@ def test_uses_the_vo_prefix_when_a_settings_module_declares_none(tmp_path: Path)
     settings.write_text(SETTINGS.replace('ENV_PREFIX = "VO_"\n', ""), encoding="utf-8")
 
     assert main(["--root", str(root)]) == 0
+
+
+@pytest.mark.parametrize("comment", ["#", "# ", "# --- Section ---", "# ===="])
+def test_fails_when_the_comment_above_has_no_text(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], comment: str
+) -> None:
+    env_example = ENV_EXAMPLE.replace("# Log level of the services.", comment)
+    root = write_repository(tmp_path, env_example)
+
+    assert main(["--root", str(root)]) == 1
+    assert ".env.example:10: VO_LOG_LEVEL has no comment above it" in capsys.readouterr().out
+
+
+def test_accepts_a_comment_block_that_ends_with_a_ruler_after_its_text(tmp_path: Path) -> None:
+    env_example = ENV_EXAMPLE.replace(
+        "# Log level of the services.\n", "# Log level of the services.\n# ----\n"
+    )
+    root = write_repository(tmp_path, env_example)
+
+    assert main(["--root", str(root)]) == 0
+
+
+def test_a_commented_assignment_that_is_not_a_vo_name_is_a_comment(tmp_path: Path) -> None:
+    env_example = ENV_EXAMPLE.replace("# Log level of the services.", "# NOTE=see STACK.md")
+    root = write_repository(tmp_path, env_example)
+
+    assert main(["--root", str(root)]) == 0
+
+
+def test_skips_model_config_and_class_variables(tmp_path: Path) -> None:
+    root = write_repository(tmp_path)
+    settings = root / "services" / "core" / "src" / "core" / "settings.py"
+    settings.write_text(
+        SETTINGS.replace(
+            'model_config = {"frozen": True}',
+            'model_config: SettingsConfigDict = {"frozen": True}\n'
+            "    registry: ClassVar[int] = 0\n"
+            "    other: typing.ClassVar[int] = 0",
+        ),
+        encoding="utf-8",
+    )
+
+    assert main(["--root", str(root)]) == 0
+
+
+@pytest.mark.parametrize("keyword", ["alias", "validation_alias"])
+def test_reads_a_string_alias_as_is(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], keyword: str
+) -> None:
+    root = write_repository(tmp_path)
+    settings = root / "services" / "core" / "src" / "core" / "settings.py"
+    field = f'    anthropic_api_key: str = Field(default="", {keyword}="ANTHROPIC_API_KEY")\n'
+    settings.write_text(SETTINGS + field, encoding="utf-8")
+
+    assert main(["--root", str(root)]) == 1
+    output = capsys.readouterr().out
+    assert "settings.py:14: ANTHROPIC_API_KEY missing from .env.example" in output
+    assert "VO_ANTHROPIC_API_KEY" not in output
+
+
+def test_prefers_the_validation_alias_and_ignores_a_non_string_alias(tmp_path: Path) -> None:
+    root = write_repository(tmp_path)
+    settings = root / "services" / "core" / "src" / "core" / "settings.py"
+    fields = (
+        '    token: str = Field(alias="TOKEN_ALIAS", validation_alias="TOKEN")\n'
+        '    choice: str = Field(validation_alias=AliasChoices("A", "B"))\n'
+        '    plain: str = compute(alias="IGNORED")\n'
+    )
+    settings.write_text(SETTINGS + fields, encoding="utf-8")
+    env_example = ENV_EXAMPLE + (
+        "\n# Token.\nTOKEN=x\n# Choice.\nVO_CHOICE=x\n# Plain.\nVO_PLAIN=x\n"
+    )
+    (root / ".env.example").write_text(env_example, encoding="utf-8")
+
+    assert main(["--root", str(root)]) == 0
+
+
+def test_requires_every_variable_compose_interpolates(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    root = write_repository(tmp_path)
+    compose = COMPOSE + "  postgres:\n    environment:\n      PGPASSWORD: ${POSTGRES_PASSWORD:?}\n"
+    (root / "docker-compose.yml").write_text(compose, encoding="utf-8")
+
+    assert main(["--root", str(root)]) == 1
+    assert "docker-compose.yml:9: POSTGRES_PASSWORD missing" in capsys.readouterr().out
+
+
+def test_ignores_variables_named_only_in_a_trailing_comment(tmp_path: Path) -> None:
+    root = write_repository(tmp_path)
+    compose = COMPOSE + "      VO_MODE: dev  # VO_LATER arrives with WP02\n"
+    (root / "docker-compose.yml").write_text(compose, encoding="utf-8")
+    env_example = ENV_EXAMPLE + "\n# Mode, set by docker-compose.yml.\n# VO_MODE=dev\n"
+    (root / ".env.example").write_text(env_example, encoding="utf-8")
+
+    assert main(["--root", str(root)]) == 0
+
+
+def test_fails_when_an_interpolated_variable_is_commented_out(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    root = write_repository(tmp_path, ENV_EXAMPLE.replace("VO_IMAGE_TAG=dev", "# VO_IMAGE_TAG=dev"))
+
+    assert main(["--root", str(root)]) == 1
+    assert (
+        ".env.example:4: VO_IMAGE_TAG is interpolated by compose: list it as NAME=value"
+        in capsys.readouterr().out
+    )
+
+
+def test_fails_when_a_variable_compose_fixes_is_not_commented_out(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    env_example = ENV_EXAMPLE.replace("# VO_DATABASE_URL=", "VO_DATABASE_URL=")
+    root = write_repository(tmp_path, env_example)
+
+    assert main(["--root", str(root)]) == 1
+    assert (
+        ".env.example:7: VO_DATABASE_URL is fixed by compose: list it as # NAME=value"
+        in capsys.readouterr().out
+    )
