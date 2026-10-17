@@ -5,7 +5,7 @@ saveExact: true
 engineStrict: true
 # Release-age exemption (STACK.md §1.4): eslint 10.13.0 (STACK.md §3) was published
 # 2026-10-16T14:24Z, younger than pnpm's default minimum release age; on 2026-10-17 a frozen
-# install still failed without this entry. Remove it at the next eslint update, as soon as
-# `pnpm install --frozen-lockfile` passes without it.
+# install still failed without this entry. Remove it as soon as
+# `pnpm install --frozen-lockfile` passes without it, and at the latest at the next eslint update.
 minimumReleaseAgeExclude:
   - eslint@10.13.0

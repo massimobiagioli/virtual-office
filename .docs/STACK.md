@@ -29,15 +29,14 @@ tools. Changing anything here requires a repository ADR.
    - npm: exact versions in `package.json` (no `^`, no `~`), `pnpm-lock.yaml` committed,
      `save-exact=true` and `engine-strict=true` in `.npmrc`, and `saveExact: true` and
      `engineStrict: true` in `frontend/pnpm-workspace.yaml` (pnpm 12 reads its settings from
-     there and ignores those `.npmrc` keys).
+     there and ignores those `.npmrc` keys). `scripts/check_frontend_pins.py` fails on any
+     `package.json` pin, `packageManager` or `engines` entry that differs from §3.
    - npm release-age quarantine: pnpm's default `minimumReleaseAge` stays on (it is a
      supply-chain control). When the latest stable release of a pinned package is still
      younger than the quarantine, it may be exempted only by an exact `name@version` entry in
      `minimumReleaseAgeExclude` of `frontend/pnpm-workspace.yaml`, with a comment naming the
-     publish date; the entry is removed at the next update of that package, as soon as a
-     frozen install passes without it.
-     `scripts/check_frontend_pins.py` fails on any `package.json` pin, `packageManager` or
-     `engines` entry that differs from §3.
+     publish date; the entry is removed as soon as a frozen install passes without it, and at
+     the latest at the next update of that package.
    - Python: exact `==` pins in `pyproject.toml` for direct dependencies, `uv.lock` committed.
    - Ollama models: explicit size/quantization tag (`qwen3.6:27b`), never bare names.
 5. **Compatibility beats novelty, explicitly.** When the newest release of a tool is
