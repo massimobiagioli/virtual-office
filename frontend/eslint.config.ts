@@ -21,21 +21,43 @@ const elements = [
 ].map((type) => ({ type, pattern: `src/${type}` }))
 
 const local = (...types: string[]) => ({ to: { element: { types: { anyOf: types } } } })
-const typesOnly = (...types: string[]) => ({
+const typesOnly = (type: string, fileInternalPath = '**') => ({
   dependency: { kind: 'type' as const },
-  to: { element: { types: { anyOf: types } } },
+  to: { element: { type, fileInternalPath } },
 })
 const external = (...sources: string[]) => ({
   to: { module: { origin: 'external' as const, source: sources } },
 })
 
-// No audio, ever (Constitution §14.10, FRONTEND.md §8.6).
-const audioGlobals = ['Audio', 'AudioContext', 'OfflineAudioContext', 'webkitAudioContext'].map(
-  (name) => ({ name, message: 'Virtual Office never produces sound (Constitution §14.10).' }),
+// No audio, ever (Constitution §14.10, FRONTEND.md §8.6): libraries, Web Audio, speech
+// synthesis, audio elements and <audio>/<video> with sound.
+const noSound = 'Virtual Office never produces sound (Constitution §14.10).'
+const audioNames = [
+  'Audio',
+  'AudioContext',
+  'OfflineAudioContext',
+  'webkitAudioContext',
+  'HTMLAudioElement',
+  'speechSynthesis',
+  'SpeechSynthesisUtterance',
+]
+const audioGlobals = audioNames.map((name) => ({ name, message: noSound }))
+const audioProperties = ['window', 'globalThis', 'self'].flatMap((object) =>
+  audioNames.map((property) => ({ object, property, message: noSound })),
 )
+// A gitignore-style pattern also matches the subpaths of a package (`@pixi/sound/filters`).
 const audioImports = {
-  group: ['@pixi/sound', '@pixi/sound/*', 'howler', 'tone'],
-  message: 'Virtual Office never produces sound (Constitution §14.10).',
+  group: ['@pixi/sound', 'howler', 'tone'],
+  message: noSound,
+}
+const audioElementCreation = {
+  selector: "CallExpression[callee.property.name='createElement'][arguments.0.value=/^audio$/i]",
+  message: noSound,
+}
+const soundingVideo = {
+  // A <video> is allowed only with the static `muted` attribute.
+  selector: "VElement[name='video']:not(:has(VAttribute[directive=false][key.name='muted']))",
+  message: noSound,
 }
 const pixiImports = {
   group: ['pixi.js', 'pixi.js/*', '@pixi/*'],
@@ -58,6 +80,10 @@ export default withVueTs(
       'vue/no-unused-properties': 'error',
       '@typescript-eslint/consistent-type-imports': 'error',
       'no-restricted-globals': ['error', ...audioGlobals],
+      'no-restricted-properties': ['error', ...audioProperties],
+      'no-restricted-syntax': ['error', audioElementCreation],
+      'vue/no-restricted-html-elements': ['error', { element: ['audio'], message: noSound }],
+      'vue/no-restricted-syntax': ['error', soundingVideo],
       'no-restricted-imports': ['error', { patterns: [audioImports, pixiImports] }],
     },
   },
@@ -101,6 +127,8 @@ export default withVueTs(
         {
           default: 'disallow',
           checkAllOrigins: true,
+          // Imports inside one element (windows → windows) are never checked.
+          checkInternals: false,
           policies: [
             // Any element may use the platform and every external package except the ones
             // restricted below; local elements follow the FRONTEND.md §1.1 matrix.
@@ -109,10 +137,15 @@ export default withVueTs(
               from: { element: { type: '*' } },
               allow: { to: { module: { origin: 'external' } } },
             },
+            {
+              // shared/ and api/ are plain TypeScript: no framework (FRONTEND.md §1).
+              from: { element: { types: { anyOf: ['shared', 'api'] } } },
+              disallow: external('vue', 'vue-router', 'pinia', '@vue/*'),
+            },
             { from: { element: { type: 'api' } }, allow: local('shared') },
             {
               from: { element: { type: 'office-engine' } },
-              allow: [local('shared'), typesOnly('api')],
+              allow: [local('shared'), typesOnly('api', 'schema.d.ts')],
             },
             {
               from: { element: { type: 'office-engine' } },
@@ -144,7 +177,6 @@ export default withVueTs(
                 'stores',
                 'composables',
                 'ui-amiga',
-                'windows',
               ),
             },
           ],
