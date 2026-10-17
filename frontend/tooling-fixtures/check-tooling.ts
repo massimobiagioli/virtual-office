@@ -1,11 +1,11 @@
 // Tooling check (US-01.06, US-01.07): the strict TypeScript options are set, every negative lint
 // fixture fails with the exact rule, file and line it exists for, every positive fixture lints
-// clean, and the real `vitest.config.ts` fails an under-covered fixture project on its global
-// coverage thresholds. A non-zero exit alone is not enough: a fixture that fails for another
+// clean, and `pnpm test` with the real `vitest.config.ts` fails an under-covered fixture project
+// on its global coverage thresholds. A non-zero exit alone is not enough: a fixture that fails for another
 // reason (a typo, a parse error, a failing test) would hide a broken rule (ADR-0009). Run with
 // `pnpm check:tooling`; ESLint loads `eslint.config.ts` natively.
 import { spawnSync } from 'node:child_process'
-import { mkdtempSync, rmSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
@@ -143,12 +143,30 @@ const cleanFixtures: readonly string[] = [
   'windows/board-title.ts',
 ].map(fixture)
 
-// Coverage fixture: a project whose only spec passes but covers a fraction of its module. It
-// runs with the real `vitest.config.ts` (`--root` points at it), so the check proves the
-// configured thresholds, not a copy of them (Constitution §18.2: others ≥ 70 %).
-const coverageFixture = 'tooling-fixtures/src/under-covered'
+// Coverage fixture: a project shaped like `src/` whose single spec passes and fully covers
+// `shared/covered.ts`, while `shared/never-imported.ts` is imported by nothing. Only the explicit
+// `coverage.include` of `vitest.config.ts` counts that file (as 0 %), and only that file pulls
+// the totals under the thresholds. The check runs the real `pnpm test` script with the real
+// config (`--root` points at the fixture), so it proves the gate as developers and CI run it.
+// `globalThreshold` is the Constitution §18.2 expectation (others ≥ 70 %) the config must match.
+const coverageFixture = 'tooling-fixtures/under-covered'
+const coveredFile = 'src/shared/covered.ts'
+const neverImportedFile = 'src/shared/never-imported.ts'
 const globalThreshold = 70
 const coverageMetrics = ['lines', 'functions', 'statements', 'branches'] as const
+
+type CoverageMetric = (typeof coverageMetrics)[number]
+// `coverage-summary.json` (the `json-summary` reporter): one entry per file, keyed by its
+// absolute path, plus `total`.
+type CoverageSummary = Readonly<
+  Record<string, Readonly<Record<CoverageMetric, { readonly pct: number }>> | undefined>
+>
+// The fields of Vitest's `json` reporter the check relies on.
+interface TestResults {
+  readonly numTotalTests: number
+  readonly numPassedTests: number
+  readonly numFailedTests: number
+}
 
 function sameJson(left: unknown, right: unknown): boolean {
   return JSON.stringify(left) === JSON.stringify(right)
@@ -239,33 +257,69 @@ async function checkLintFixtures(cwd: string): Promise<string[]> {
   return failures
 }
 
+function readJson(file: string): unknown {
+  return JSON.parse(readFileSync(file, 'utf8')) as unknown
+}
+
+function checkFileCoverage(
+  summary: CoverageSummary,
+  root: string,
+  file: string,
+  accept: (pct: number) => boolean,
+  expectation: string,
+): string[] {
+  const entry = summary[path.resolve(root, file)]
+  if (entry === undefined) {
+    return [`${coverageFixture}: ${file} is missing from the coverage report`]
+  }
+  return coverageMetrics
+    .filter((metric) => !accept(entry[metric].pct))
+    .map(
+      (metric) =>
+        `${coverageFixture}: ${file} ${metric} must be ${expectation}, ` +
+        `found ${String(entry[metric].pct)} %`,
+    )
+}
+
 function checkCoverageThreshold(cwd: string): string[] {
-  const reportsDirectory = mkdtempSync(path.join(os.tmpdir(), 'vo-coverage-'))
+  const root = path.resolve(cwd, coverageFixture)
+  const outputDirectory = mkdtempSync(path.join(os.tmpdir(), 'vo-coverage-'))
+  const reportsDirectory = path.join(outputDirectory, 'coverage')
+  const resultsFile = path.join(outputDirectory, 'results.json')
   try {
+    // `pnpm run test` adds only where to look and where to write: coverage itself must come
+    // from the script and the config.
     const run = spawnSync(
-      process.execPath,
+      'pnpm',
       [
-        path.resolve(cwd, 'node_modules/vitest/vitest.mjs'),
         'run',
-        '--coverage',
+        'test',
         '--config',
         path.resolve(cwd, 'vitest.config.ts'),
         '--root',
-        path.resolve(cwd, coverageFixture),
+        root,
         `--coverage.reportsDirectory=${reportsDirectory}`,
+        '--reporter=default',
+        '--reporter=json',
+        `--outputFile.json=${resultsFile}`,
       ],
       { cwd, encoding: 'utf8', env: { ...process.env, NO_COLOR: '1', CI: '1' } },
     )
     if (run.error !== undefined) {
-      return [`${coverageFixture}: vitest did not start: ${run.error.message}`]
+      return [`${coverageFixture}: pnpm test did not start: ${run.error.message}`]
     }
     const output = `${run.stdout}\n${run.stderr}`
     const failures: string[] = []
     if (run.status === 0) {
-      failures.push(`${coverageFixture}: vitest exited 0, expected a coverage threshold failure`)
+      failures.push(`${coverageFixture}: pnpm test exited 0, expected a coverage threshold failure`)
     }
     // The fixture spec must pass: the run may fail on coverage only.
-    if (!/Tests\s+1 passed \(1\)/.test(output)) {
+    const results = existsSync(resultsFile) ? (readJson(resultsFile) as Partial<TestResults>) : {}
+    if (
+      results.numTotalTests !== 1 ||
+      results.numPassedTests !== 1 ||
+      results.numFailedTests !== 0
+    ) {
       failures.push(`${coverageFixture}: expected its single spec to pass\n${output}`)
     }
     for (const metric of coverageMetrics) {
@@ -280,9 +334,19 @@ function checkCoverageThreshold(cwd: string): string[] {
         )
       }
     }
-    return failures
+    const summaryFile = path.join(reportsDirectory, 'coverage-summary.json')
+    if (!existsSync(summaryFile)) {
+      failures.push(`${coverageFixture}: no coverage-summary.json (json-summary reporter)`)
+      return failures
+    }
+    const summary = readJson(summaryFile) as CoverageSummary
+    return [
+      ...failures,
+      ...checkFileCoverage(summary, root, coveredFile, (pct) => pct >= globalThreshold, 'covered'),
+      ...checkFileCoverage(summary, root, neverImportedFile, (pct) => pct === 0, '0 %'),
+    ]
   } finally {
-    rmSync(reportsDirectory, { recursive: true, force: true })
+    rmSync(outputDirectory, { recursive: true, force: true })
   }
 }
 
@@ -305,7 +369,8 @@ async function main(): Promise<void> {
   console.log(
     `tooling check passed: ${String(lintExpectations.length)} expected lint errors found, ` +
       `${String(cleanFixtures.length)} positive fixtures clean, ` +
-      `coverage below ${String(globalThreshold)} % fails on ${coverageMetrics.join(', ')}`,
+      `an unimported file pulls coverage below ${String(globalThreshold)} % on: ` +
+      coverageMetrics.join(', '),
   )
 }
 

@@ -19,7 +19,9 @@ export default mergeConfig(
         // `main.ts` only mounts the app on the real DOM; what it wires (App, router, Pinia) is
         // covered by `App.spec.ts`. Specs and declaration files are not source.
         exclude: ['src/**/*.spec.ts', 'src/**/*.d.ts', 'src/main.ts'],
-        reporter: ['text'],
+        // `text` prints the table; `json-summary` writes `coverage-summary.json`, which
+        // `pnpm check:tooling` reads (WP03 adds the cobertura XML for CI artifacts).
+        reporter: ['text', 'json-summary'],
         reportsDirectory: 'coverage',
         thresholds: {
           lines: 70,
