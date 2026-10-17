@@ -264,3 +264,30 @@ def test_fails_when_a_variable_compose_fixes_is_not_commented_out(
         ".env.example:7: VO_DATABASE_URL is fixed by compose: list it as # NAME=value"
         in capsys.readouterr().out
     )
+
+
+
+def test_a_comment_documents_only_the_variable_right_below_it(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    env_example = ENV_EXAMPLE.replace(
+        "VO_IMAGE_TAG=dev\n", "VO_IMAGE_TAG=dev\nVO_LOG_LEVEL=INFO\n"
+    ).replace("\n# Log level of the services.\nVO_LOG_LEVEL=INFO\n", "")
+    root = write_repository(tmp_path, env_example)
+
+    assert main(["--root", str(root)]) == 1
+    output = capsys.readouterr().out
+    assert ".env.example:5: VO_LOG_LEVEL has no comment above it" in output
+    assert "VO_IMAGE_TAG has no comment" not in output
+
+
+def test_a_blank_line_separates_a_comment_from_the_variable_below(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    env_example = ENV_EXAMPLE.replace(
+        "# Log level of the services.\n", "# Log level of the services.\n\n"
+    )
+    root = write_repository(tmp_path, env_example)
+
+    assert main(["--root", str(root)]) == 1
+    assert ".env.example:11: VO_LOG_LEVEL has no comment above it" in capsys.readouterr().out
