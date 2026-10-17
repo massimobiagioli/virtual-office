@@ -810,3 +810,94 @@ image: `check_frontend_pins.py` exit 0, `pytest scripts/tests` 32 passed; covera
 
 - Every banned audio name has its own fixture line and expectations check the §14.10 message; all
   allowed §1.1 edges are now proven both ways.
+
+## US-01.07 — Vitest setup with coverage
+
+### Round 1 · 2026-10-17 · branch `feat/us-01-07-vitest-coverage` · head `ee5830e`
+
+**Verdict:** CHANGES REQUESTED
+
+**Quality gate**
+
+`frontend/Dockerfile` `dev` target as UID 10001; core `dev` image for `scripts/`; mutations in
+throwaway containers.
+
+| Gate | Result |
+| ---- | ------ |
+| `pnpm lint` / `pnpm format:check` / `pnpm typecheck` | pass |
+| `pnpm test` (3 files, 9 tests, 100 % on all four metrics) | pass |
+| `pnpm coverage` (HTML report, git-ignored) | pass |
+| `pnpm build` | pass |
+| `pnpm check:tooling` (45 lint expectations, 11 positives, coverage fixture fails on 4 metrics) | pass |
+| runtime target build | pass |
+| `docker compose config -q` | pass |
+| `check_frontend_pins.py`, `pytest scripts/tests` (32) | pass |
+| coverage mutation test (8 mutations) | 6 caught, 2 survived (R1, R2) |
+| E2E, CI | not available (WP14+, WP03) |
+
+**Acceptance**
+
+- AC1 — `frontend/vitest.config.ts:13-16` (jsdom, spec glob, v8); `pnpm test` prints the table.
+- AC2 — `vitest.config.ts:24-29` sets 70 on all four metrics; `check-tooling.ts:242-287` asserts the
+  four threshold messages with a passing spec. Gaps: R1, R2.
+- AC3 — `frontend/src/shared/clamp.spec.ts` has 4 examples and 2 fast-check properties, all pass.
+
+**Findings**
+
+- [ ] **R1 · Major** — `frontend/tooling-fixtures/src/under-covered/src/partly-covered.ts:1`,
+  `frontend/tooling-fixtures/check-tooling.ts:149-287` — the negative check never proves the
+  explicit `coverage.include` (`vitest.config.ts:18`): deleting it and adding an untested
+  `src/shared/untested.ts` left `pnpm test` at "100 %" and `check:tooling` green, so the
+  documented "unimported files count as 0 %" (FRONTEND.md §10) is unprotected (feature-review §3,
+  ADR-0009). Suggested fix: add a never-imported module to the fixture so only it pulls totals under
+  70 %, and assert its 0 % row in the report.
+- [ ] **R2 · Minor** — `frontend/package.json:21` — thresholds fire only because the `test` script
+  passes `--coverage`; changing it to `vitest run` leaves `check:tooling` green (the check passes
+  `--coverage` itself, `check-tooling.ts:250`). Suggested fix: `coverage.enabled: true` in the config
+  (`test:watch` opts out) and drop the flag from the check, or assert the script.
+- [ ] **R3 · Minor** — `frontend/src/shared/clamp.spec.ts:32,43` — `fc.assert` uses an unfixed
+  random seed (feature-review §3, PRINCIPLES.md:92 "deterministic"). Suggested fix: pin a seed via
+  a Vitest `setupFiles` entry with `fc.configureGlobal({ seed })` (env override for exploration), or
+  record the exception in the story ADR.
+- [ ] **R4 · Minor** — `frontend/tooling-fixtures/src/under-covered/` — the coverage fixture lives
+  in the lint-fixture tree, which is ESLint-ignored (`eslint.config.ts:84`) on the ADR-0011 premise
+  that it holds only asserted lint fixtures; the new files are neither linted nor type-checked and
+  `under-covered/` is not a §1.1 module. Suggested fix: move to `tooling-fixtures/coverage/` under a
+  checked tsconfig, or record the exception in the story ADR (amending ADR-0011 Decision 1).
+- [ ] **R5 · Minor** — `frontend/tooling-fixtures/check-tooling.ts:268` — `/Tests\s+1 passed \(1\)/`
+  matches Vitest's human summary, not a stable interface; a minor upgrade could break the check
+  without any rule changing. Suggested fix: `--reporter=json --outputFile=<tmp>` and assert
+  `numPassedTests`/`numFailedTests`; keep the threshold regex as proof the gate fires.
+- [ ] **R6 · Minor** — `frontend/vitest.config.ts:22`, `.project/ROADMAP.md:962,1064` — only the
+  `text` reporter; WP03 promises a coverage XML artifact. Suggested fix: add `json-summary` now, or
+  state in FRONTEND.md §10 / the story ADR that WP03 adds the cobertura reporter.
+- [ ] **R7 · Minor** — `.project/ROADMAP.md:974` — WP03 `frontend-checks` still says
+  `pnpm test --coverage`, now redundant. Suggested fix: `pnpm test` (coverage included).
+- [ ] **R8 · Minor** — `.project/execution/wp01-repository-and-toolchain.md:210` — the story makes
+  its own decisions (`main.ts` excluded, `--root` reuse of the real config, reporters, fixture
+  placement, `pnpm test` always with coverage, seed policy), so it needs its own story ADR
+  (AGENTS.md rule 14). Suggested fix: write ADR-0012 at `/feature-close`.
+- [ ] **R9 · Nit** — `frontend/tooling-fixtures/check-tooling.ts:248` — spawns the internal path
+  `node_modules/vitest/vitest.mjs`. Suggested fix: resolve the bin via `createRequire` or
+  `pnpm exec vitest`.
+- [ ] **R10 · Nit** — `frontend/tooling-fixtures/check-tooling.ts:147-150` — comment says "not a copy
+  of them" but `globalThreshold = 70` is one. Suggested fix: say it is the §18.2 expectation the
+  config must match.
+- [ ] **R11 · Nit** — `frontend/src/shared/clamp.ts:2` — `NaN` bounds are not rejected, so the
+  "closed range" contract is not fully guarded. Suggested fix: extend the `RangeError` guard, with a
+  test.
+- [ ] **R12 · Nit** — `.docs/FRONTEND.md:351-353` — run-on sentence mixes the coverage check into
+  the lint-fixture rule. Suggested fix: separate sentence; widen the closing rule to "a lint rule or
+  a coverage threshold".
+- [ ] **R13 · Nit** — `.docs/FRONTEND.md:344` — §11 script list omits `test`, `test:watch`,
+  `coverage`. Suggested fix: "(test scripts: §10)" pointer.
+- [ ] **R14 · Nit** — `.docs/FRONTEND.md:377` — §13 checklist says "vitest … green" only.
+  Suggested fix: "vitest (coverage thresholds met)".
+- [ ] **R15 · Nit** — `.project/execution/wp01-repository-and-toolchain.md:225` — "Tests: sample
+  spec files" could name `shared/clamp.spec.ts` and the coverage fixture. Optional.
+
+**Notes**
+
+- The threshold check runs the real `vitest.config.ts` via `--root` with a temporary
+  `reportsDirectory` and asserts all four metrics — the ADR-0009 lesson applied.
+- Pins match STACK.md §3; no release-age exemption needed.
