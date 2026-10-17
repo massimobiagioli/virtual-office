@@ -19,7 +19,8 @@ frontend/
 ├── pnpm-workspace.yaml           # saveExact/engineStrict again: pnpm 12 ignores them in .npmrc
 │                                 # pins checked by scripts/check_frontend_pins.py (BACKEND.md §11)
 ├── tsconfig.json · tsconfig.app.json · tsconfig.node.json
-├── vite.config.ts · vitest.config.ts · vitest.setup.ts (fast-check seed, §10)
+├── vite.config.ts · vitest.config.ts · vitest.setup.ts (applies the fast-check seed, §10)
+├── vitest.seed.ts · vitest.seed.spec.ts  # fixed seed / FC_SEED parsing and its spec (§10)
 ├── eslint.config.ts · .prettierrc.json · .prettierignore
 ├── Dockerfile · nginx.conf · security-headers.conf · .dockerignore
 ├── index.html
@@ -286,8 +287,9 @@ Follow skill `building-office-scene` and STACK.md §4. Code rules:
 - Scripts: `pnpm test` (`vitest run`: the gate, prints the coverage table), `pnpm test:watch`
   (watch mode with `--coverage.enabled=false`, for the TDD loop), `pnpm coverage` (as
   `pnpm test`, plus an HTML report in `coverage/`).
-- `vitest.config.ts`: `src/**/*.spec.ts` in jsdom; v8 coverage with `enabled: true`, so every
-  `vitest run` measures it and enforces the thresholds; coverage over `src/**/*.{ts,vue}`, so a
+- `vitest.config.ts`: `src/**/*.spec.ts` and the root `vitest.*.spec.ts` (test helpers) in
+  jsdom; v8 coverage with `enabled: true`, so every `vitest run` measures it and enforces the
+  thresholds; coverage over `src/**/*.{ts,vue}`, so a
   file no spec imports counts as 0 %; specs, `*.d.ts` and `main.ts` (it only mounts the app;
   what it wires is covered by `App.spec.ts`) are excluded. Global thresholds are 70 % for lines,
   functions, statements and branches (Constitution §18.2 "others"); a stricter per-folder
@@ -295,10 +297,12 @@ Follow skill `building-office-scene` and STACK.md §4. Code rules:
 - Reporters: `text` (the table) and `json-summary` (`coverage/coverage-summary.json`, read by
   `pnpm check:tooling`); WP03 adds the cobertura XML reporter for the CI coverage artifact.
 - Import `describe`, `it`, `expect` from `vitest` explicitly (no globals). Property tests use
-  `fast-check` (`fc.assert(fc.property(…))`) and are deterministic: `vitest.setup.ts` sets a
-  fixed seed with `fc.configureGlobal`; `FC_SEED=<integer> pnpm test` explores another seed or
+  `fast-check` (`fc.assert(fc.property(…))`) and are deterministic: `vitest.setup.ts` applies
+  `propertySeed(FC_SEED)` of `vitest.seed.ts` with `fc.configureGlobal` (the fixed default seed
+  when `FC_SEED` is unset or empty); `FC_SEED=<integer> pnpm test` explores another seed or
   replays the one a failure printed (a test-only knob, hence no `VO_` prefix).
-  `shared/clamp.spec.ts` is the reference example.
+  `vitest.seed.spec.ts` tests the parsing and asserts the configured global seed, so a
+  non-deterministic seed fails `pnpm test`. `shared/clamp.spec.ts` is the reference example.
 - `pnpm check:tooling` (§11) proves the gate fires: it runs the real `pnpm test` script and
   `vitest.config.ts` on `tooling-fixtures/under-covered/` (linted and type-checked like `src/`),
   whose single spec passes and fully covers `shared/covered.ts` while `shared/never-imported.ts`

@@ -14,7 +14,9 @@ export default mergeConfig(
   defineConfig({
     test: {
       environment: 'jsdom',
-      include: ['src/**/*.spec.ts'],
+      // Specs beside their source: the app in `src/`, the test helpers at the root
+      // (`vitest.seed.spec.ts`).
+      include: ['src/**/*.spec.ts', 'vitest.*.spec.ts'],
       // Absolute, so a run with another `--root` (the coverage fixture) loads it too.
       setupFiles: [fileURLToPath(new URL('./vitest.setup.ts', import.meta.url))],
       coverage: {
