@@ -22,6 +22,7 @@ in the same change.
 | ADR-0010 | [US-01.05: Frontend scaffold with pnpm-enforced exact pins, a stdlib pin check and a least-privilege nginx image](0010-us-01-05-frontend-scaffold-pnpm-settings-and-nginx-image.md) | Proposed | 2026-10-17 | — | — |
 | ADR-0011 | [US-01.06: Strict ESLint flat config loaded natively, a boundaries matrix, a no-audio lint set and committed lint fixtures](0011-us-01-06-eslint-boundaries-no-audio-lint-and-committed-fixtures.md) | Proposed | 2026-10-17 | — | — |
 | ADR-0012 | [US-01.07: Vitest coverage always on with explicit include, proven by a fixture project, and seeded property tests](0012-us-01-07-vitest-coverage-always-on-proven-by-a-fixture-project.md) | Proposed | 2026-10-17 | — | — |
+| ADR-0013 | [US-01.08: Services get only their compose `environment:`, `.env.example` is checked by a stdlib script, root dotfiles allowed](0013-us-01-08-env-only-through-compose-environment-and-env-example-check.md) | Proposed | 2026-10-17 | — | — |
 
 ## Status legend
 
