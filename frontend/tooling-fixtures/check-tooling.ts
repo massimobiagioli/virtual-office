@@ -1,8 +1,12 @@
-// Tooling check (US-01.06): the strict TypeScript options are set, every negative lint fixture
-// fails with the exact rule, file and line it exists for, and every positive fixture lints
-// clean. A non-zero exit alone is not enough: a fixture that fails for another reason (a typo,
-// a parse error) would hide a broken rule (ADR-0009). Run with `pnpm check:tooling`; ESLint
-// loads `eslint.config.ts` natively.
+// Tooling check (US-01.06, US-01.07): the strict TypeScript options are set, every negative lint
+// fixture fails with the exact rule, file and line it exists for, every positive fixture lints
+// clean, and the real `vitest.config.ts` fails an under-covered fixture project on its global
+// coverage thresholds. A non-zero exit alone is not enough: a fixture that fails for another
+// reason (a typo, a parse error, a failing test) would hide a broken rule (ADR-0009). Run with
+// `pnpm check:tooling`; ESLint loads `eslint.config.ts` natively.
+import { spawnSync } from 'node:child_process'
+import { mkdtempSync, rmSync } from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -139,6 +143,13 @@ const cleanFixtures: readonly string[] = [
   'windows/board-title.ts',
 ].map(fixture)
 
+// Coverage fixture: a project whose only spec passes but covers a fraction of its module. It
+// runs with the real `vitest.config.ts` (`--root` points at it), so the check proves the
+// configured thresholds, not a copy of them (Constitution §18.2: others ≥ 70 %).
+const coverageFixture = 'tooling-fixtures/src/under-covered'
+const globalThreshold = 70
+const coverageMetrics = ['lines', 'functions', 'statements', 'branches'] as const
+
 function sameJson(left: unknown, right: unknown): boolean {
   return JSON.stringify(left) === JSON.stringify(right)
 }
@@ -228,6 +239,53 @@ async function checkLintFixtures(cwd: string): Promise<string[]> {
   return failures
 }
 
+function checkCoverageThreshold(cwd: string): string[] {
+  const reportsDirectory = mkdtempSync(path.join(os.tmpdir(), 'vo-coverage-'))
+  try {
+    const run = spawnSync(
+      process.execPath,
+      [
+        path.resolve(cwd, 'node_modules/vitest/vitest.mjs'),
+        'run',
+        '--coverage',
+        '--config',
+        path.resolve(cwd, 'vitest.config.ts'),
+        '--root',
+        path.resolve(cwd, coverageFixture),
+        `--coverage.reportsDirectory=${reportsDirectory}`,
+      ],
+      { cwd, encoding: 'utf8', env: { ...process.env, NO_COLOR: '1', CI: '1' } },
+    )
+    if (run.error !== undefined) {
+      return [`${coverageFixture}: vitest did not start: ${run.error.message}`]
+    }
+    const output = `${run.stdout}\n${run.stderr}`
+    const failures: string[] = []
+    if (run.status === 0) {
+      failures.push(`${coverageFixture}: vitest exited 0, expected a coverage threshold failure`)
+    }
+    // The fixture spec must pass: the run may fail on coverage only.
+    if (!/Tests\s+1 passed \(1\)/.test(output)) {
+      failures.push(`${coverageFixture}: expected its single spec to pass\n${output}`)
+    }
+    for (const metric of coverageMetrics) {
+      const message = new RegExp(
+        `Coverage for ${metric} \\([\\d.]+%\\) does not meet global threshold ` +
+          `\\(${String(globalThreshold)}%\\)`,
+      )
+      if (!message.test(output)) {
+        failures.push(
+          `${coverageFixture}: expected the ${metric} coverage to fail the global ` +
+            `${String(globalThreshold)} % threshold`,
+        )
+      }
+    }
+    return failures
+  } finally {
+    rmSync(reportsDirectory, { recursive: true, force: true })
+  }
+}
+
 async function main(): Promise<void> {
   const cwd = process.cwd()
   const failures = [
@@ -235,6 +293,7 @@ async function main(): Promise<void> {
       checkCompilerOptions(path.resolve(cwd, file), required),
     ),
     ...(await checkLintFixtures(cwd)),
+    ...checkCoverageThreshold(cwd),
   ]
   for (const failure of failures) {
     console.error(failure)
@@ -245,7 +304,8 @@ async function main(): Promise<void> {
   }
   console.log(
     `tooling check passed: ${String(lintExpectations.length)} expected lint errors found, ` +
-      `${String(cleanFixtures.length)} positive fixtures clean`,
+      `${String(cleanFixtures.length)} positive fixtures clean, ` +
+      `coverage below ${String(globalThreshold)} % fails on ${coverageMetrics.join(', ')}`,
   )
 }
 
