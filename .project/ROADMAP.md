@@ -971,7 +971,7 @@ flowchart LR
   - `backend-checks`: builds the `dev` targets of both Python services, runs `ruff check`,
     `ruff format --check`, `mypy`, `lint-imports`, `pytest` (unit) with coverage;
   - `frontend-checks`: builds the frontend `deps` target, runs `pnpm lint`,
-    `pnpm format:check`, `pnpm typecheck`, `pnpm test --coverage`;
+    `pnpm format:check`, `pnpm typecheck`, `pnpm test` (coverage included);
   - `repo-checks`: `no-latest`, Renovate config validation (when changed), internal Markdown
     link check over `.docs/`, `.project/`, `.agents/`, `AGENTS.md`;
   - job summaries with tool outputs and coverage tables.
