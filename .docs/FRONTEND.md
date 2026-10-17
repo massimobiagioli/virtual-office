@@ -23,7 +23,7 @@ frontend/
 ├── Dockerfile · nginx.conf · security-headers.conf · .dockerignore
 ├── index.html
 ├── public/                       # favicon only; everything else is imported (hashed)
-├── tooling-fixtures/             # negative lint fixtures + check-tooling.ts (never built, §11)
+├── tooling-fixtures/             # lint fixtures (negative, positive) + check-tooling.ts (§11)
 └── src/
     ├── main.ts                   # createApp, Pinia, router, global styles
     ├── router.ts                 # createWorkbenchRouter(): deep-link routes (§6)

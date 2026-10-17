@@ -1,5 +1,6 @@
 {
-  // Typed linting of the negative fixtures only: never built and never part of `pnpm typecheck`.
+  // Typed linting of the lint fixtures (negative and positive): never built and never part of
+  // `pnpm typecheck`.
   "extends": "../tsconfig.app.json",
   "compilerOptions": {
     "tsBuildInfoFile": "../node_modules/.tmp/tsconfig.fixtures.tsbuildinfo"
