@@ -212,11 +212,16 @@ def test_prefers_the_validation_alias_and_reads_only_field_aliases(tmp_path: Pat
     fields = (
         '    token: str = Field(alias=ALIAS, validation_alias="TOKEN", default=make())\n'
         '    plain: str = compute(alias="IGNORED")\n'
+        '    other: str = Field(default="")\n'
     )
     settings.write_text(SETTINGS + fields, encoding="utf-8")
-    compose = COMPOSE + "      TOKEN: ${TOKEN:-}\n      VO_PLAIN: ${VO_PLAIN:-}\n"
+    compose = COMPOSE + (
+        "      TOKEN: ${TOKEN:-}\n      VO_PLAIN: ${VO_PLAIN:-}\n      VO_OTHER: x\n"
+    )
     (root / "docker-compose.yml").write_text(compose, encoding="utf-8")
-    env_example = ENV_EXAMPLE + "\n# Token.\nTOKEN=x\n# Plain.\nVO_PLAIN=x\n"
+    env_example = ENV_EXAMPLE + (
+        "\n# Token.\nTOKEN=x\n# Plain.\nVO_PLAIN=x\n# Other.\n# VO_OTHER=x\n"
+    )
     (root / ".env.example").write_text(env_example, encoding="utf-8")
 
     assert main(["--root", str(root)]) == 0
