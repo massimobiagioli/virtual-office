@@ -9,7 +9,7 @@
 *.pem
 *.key
 
-# --- Python (uv workspace: services/*) ---
+# --- Python (one uv project per service: services/*, ADR-0004) ---
 .venv/
 __pycache__/
 *.py[cod]
