@@ -43,6 +43,13 @@ Every build context has a `.dockerignore` that excludes at least: `.git`, `node_
 `.venv`, `__pycache__`, `dist`, `coverage`, `.pytest_cache`, `.mypy_cache`, `.ruff_cache`,
 `.env*` (except `.env.example`), `*.log`, `.docs`, `.agents`.
 
+`.env` reaches compose only for `${VO_*}` interpolation; the services receive exactly the
+variables under each `environment:` key. `.env.example` therefore lists the variables compose
+interpolates as `NAME=value` and the per-service values compose fixes itself as commented
+`# NAME=value` reference entries, each with its own comment. `python -I
+scripts/check_env_example.py` fails when a `Settings` field or a compose `VO_*` variable is
+missing from it, or when it lists a variable nothing reads (BACKEND.md §11.1).
+
 ---
 
 ## 3. Image tags — the rules
