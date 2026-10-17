@@ -17,6 +17,7 @@ from [STACK.md](STACK.md).
 frontend/
 ├── package.json · pnpm-lock.yaml · .npmrc (save-exact=true, engine-strict=true)
 ├── pnpm-workspace.yaml           # saveExact/engineStrict again: pnpm 12 ignores them in .npmrc
+│                                 # pins checked by scripts/check_frontend_pins.py (BACKEND.md §11)
 ├── tsconfig.json · tsconfig.app.json · tsconfig.node.json
 ├── vite.config.ts · vitest.config.ts · eslint.config.ts · .prettierrc.json
 ├── Dockerfile · nginx.conf · security-headers.conf · .dockerignore
@@ -34,6 +35,7 @@ frontend/
     ├── composables/              # use<Thing>.ts
     ├── ui-amiga/                 # Amiga UI kit: tokens.css, base.css, components (see DESIGN.md)
     ├── windows/                  # One folder per Workbench window (Board, Office, PmChat, …)
+    │   └── WorkbenchDesktop.vue  # root-route view (placeholder; moved/reshaped in WP08)
     ├── office-engine/            # Plain TS: loop, map, pathfinding, choreographies (no Vue, no Pixi)
     ├── office-renderer/          # PixiJS adapter (the only place importing pixi.js)
     ├── assets/                   # Imported sprites, atlases, maps, fonts (never audio)
