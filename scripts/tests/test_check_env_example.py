@@ -253,9 +253,20 @@ def test_requires_every_variable_compose_interpolates(
     assert "docker-compose.yml:10: POSTGRES_PASSWORD missing" in capsys.readouterr().out
 
 
+def test_requires_an_unbraced_interpolation(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    root = write_repository(tmp_path)
+    compose = COMPOSE + "      PGUSER: $POSTGRES_USER\n"
+    (root / "docker-compose.yml").write_text(compose, encoding="utf-8")
+
+    assert main(["--root", str(root)]) == 1
+    assert "docker-compose.yml:8: POSTGRES_USER missing" in capsys.readouterr().out
+
+
 def test_ignores_an_escaped_interpolation(tmp_path: Path) -> None:
     root = write_repository(tmp_path)
-    compose = COMPOSE + '    command: ["sh", "-c", "echo $${BAR}"]\n'
+    compose = COMPOSE + '    command: ["sh", "-c", "echo $${BAR} $$BAZ"]\n'
     (root / "docker-compose.yml").write_text(compose, encoding="utf-8")
 
     assert main(["--root", str(root)]) == 0
