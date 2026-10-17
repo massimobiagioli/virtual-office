@@ -19,11 +19,13 @@ frontend/
 ├── pnpm-workspace.yaml           # saveExact/engineStrict again: pnpm 12 ignores them in .npmrc
 │                                 # pins checked by scripts/check_frontend_pins.py (BACKEND.md §11)
 ├── tsconfig.json · tsconfig.app.json · tsconfig.node.json
-├── vite.config.ts · vitest.config.ts · eslint.config.ts · .prettierrc.json · .prettierignore
+├── vite.config.ts · vitest.config.ts · vitest.setup.ts (fast-check seed, §10)
+├── eslint.config.ts · .prettierrc.json · .prettierignore
 ├── Dockerfile · nginx.conf · security-headers.conf · .dockerignore
 ├── index.html
 ├── public/                       # favicon only; everything else is imported (hashed)
-├── tooling-fixtures/             # lint and coverage fixtures + check-tooling.ts (§10, §11)
+├── tooling-fixtures/             # check-tooling.ts; lint fixtures in src/ (§11),
+│                                 # coverage fixture project in under-covered/ (§10)
 └── src/
     ├── main.ts                   # createApp, Pinia, router, global styles
     ├── router.ts                 # createWorkbenchRouter(): deep-link routes (§6)
@@ -281,20 +283,29 @@ Follow skill `building-office-scene` and STACK.md §4. Code rules:
 
 - Test names describe behavior: `it('rejects a drop into DONE from TODO')`.
 - No snapshot tests of HTML markup (brittle); visual tests cover appearance.
-- Scripts: `pnpm test` (`vitest run --coverage`: the gate, prints the coverage table),
-  `pnpm test:watch` (watch mode without coverage, for the TDD loop), `pnpm coverage` (as
+- Scripts: `pnpm test` (`vitest run`: the gate, prints the coverage table), `pnpm test:watch`
+  (watch mode with `--coverage.enabled=false`, for the TDD loop), `pnpm coverage` (as
   `pnpm test`, plus an HTML report in `coverage/`).
-- `vitest.config.ts`: `src/**/*.spec.ts` in jsdom; v8 coverage over `src/**/*.{ts,vue}`, so a
+- `vitest.config.ts`: `src/**/*.spec.ts` in jsdom; v8 coverage with `enabled: true`, so every
+  `vitest run` measures it and enforces the thresholds; coverage over `src/**/*.{ts,vue}`, so a
   file no spec imports counts as 0 %; specs, `*.d.ts` and `main.ts` (it only mounts the app;
   what it wires is covered by `App.spec.ts`) are excluded. Global thresholds are 70 % for lines,
   functions, statements and branches (Constitution §18.2 "others"); a stricter per-folder
   threshold (e.g. `office-engine`) is added in the same change as the code it covers.
+- Reporters: `text` (the table) and `json-summary` (`coverage/coverage-summary.json`, read by
+  `pnpm check:tooling`); WP03 adds the cobertura XML reporter for the CI coverage artifact.
 - Import `describe`, `it`, `expect` from `vitest` explicitly (no globals). Property tests use
-  `fast-check` (`fc.assert(fc.property(…))`) and replay a failure from the seed it prints;
+  `fast-check` (`fc.assert(fc.property(…))`) and are deterministic: `vitest.setup.ts` sets a
+  fixed seed with `fc.configureGlobal`; `FC_SEED=<integer> pnpm test` explores another seed or
+  replays the one a failure printed (a test-only knob, hence no `VO_` prefix).
   `shared/clamp.spec.ts` is the reference example.
-- `pnpm check:tooling` (§11) proves the thresholds fire: it runs the real `vitest.config.ts` on
-  `tooling-fixtures/src/under-covered/`, whose only spec passes, and expects the run to fail on
-  all four metrics.
+- `pnpm check:tooling` (§11) proves the gate fires: it runs the real `pnpm test` script and
+  `vitest.config.ts` on `tooling-fixtures/under-covered/` (linted and type-checked like `src/`),
+  whose single spec passes and fully covers `shared/covered.ts` while `shared/never-imported.ts`
+  is imported by nothing. It expects the run to fail on all four metrics, reads the test counts
+  from Vitest's `json` reporter, and expects the never-imported file at 0 % in
+  `coverage-summary.json`, so dropping `coverage.include`, `coverage.enabled` or the reporter
+  fails the check.
 
 ---
 
@@ -342,15 +353,16 @@ Follow skill `building-office-scene` and STACK.md §4. Code rules:
   and is type-checked through `tsconfig.node.json`.
 - Prettier: `semi: false`, `singleQuote: true`, `printWidth: 100`, `trailingComma: 'all'`.
 - Scripts: `pnpm lint` (`--max-warnings 0`), `pnpm format`, `pnpm format:check`,
-  `pnpm typecheck` (`vue-tsc --build`, no emit), `pnpm check:tooling`.
+  `pnpm typecheck` (`vue-tsc --build`, no emit), `pnpm check:tooling` (test scripts: §10).
 - `pnpm check:tooling` runs `tooling-fixtures/check-tooling.ts`: every negative fixture in
   `tooling-fixtures/src/` (globally ignored by `pnpm lint`) must fail with its expected rule id
   at its file and line (and, where two config entries share a rule id, with its message), every
   positive fixture (one per §1.1 edge allowed) must lint with no message at all, and
   `tsconfig.app.json` and `tsconfig.node.json` (read by the TypeScript parser, `extends`
-  included) must set every §2 option, and the under-covered fixture project must fail the
-  coverage thresholds of `vitest.config.ts` (§10). Add a fixture and an expectation whenever a
-  lint rule protects a Constitution or §1.1 rule.
+  included) must set every §2 option. It also runs `pnpm test` on the under-covered fixture
+  project, which must fail the coverage thresholds of `vitest.config.ts` (§10). Add a fixture
+  and an expectation whenever a lint rule or a coverage threshold protects a Constitution or
+  §1.1 rule.
 
 ---
 
@@ -374,5 +386,6 @@ Follow skill `building-office-scene` and STACK.md §4. Code rules:
 - [ ] UI changes on events, not optimistically (except local UI state)
 - [ ] Tokens only; no radius/blur/gradients; logical-pixel sizes (DESIGN.md)
 - [ ] Keyboard path, focus, aria, reduced motion verified
-- [ ] eslint, prettier, vue-tsc, vitest, Playwright (E2E + visual + axe) green
+- [ ] eslint, prettier, vue-tsc, vitest (coverage thresholds met) green
+- [ ] Playwright (E2E + visual + axe) green
 ```

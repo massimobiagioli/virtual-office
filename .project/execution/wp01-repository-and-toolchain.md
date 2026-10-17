@@ -222,7 +222,8 @@ Renovate configuration, `.env.example`, `.gitignore`, `.editorconfig`.
   - [x] Sample tests: `shared/clamp.spec.ts` (examples + fast-check properties) and the
     under-covered fixture asserted by `pnpm check:tooling`.
   - [x] Scripts `test`, `test:watch`, `coverage`.
-- **Tests:** sample spec files.
+- **Tests:** `src/shared/clamp.spec.ts` (examples, seeded fast-check properties) and the
+  `tooling-fixtures/under-covered/` project run by `pnpm check:tooling`.
 - **Done when:** `pnpm test` green with coverage report.
 
 ### D01.3 — Repository hygiene
