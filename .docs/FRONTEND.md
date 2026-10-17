@@ -19,10 +19,11 @@ frontend/
 ├── pnpm-workspace.yaml           # saveExact/engineStrict again: pnpm 12 ignores them in .npmrc
 │                                 # pins checked by scripts/check_frontend_pins.py (BACKEND.md §11)
 ├── tsconfig.json · tsconfig.app.json · tsconfig.node.json
-├── vite.config.ts · vitest.config.ts · eslint.config.ts · .prettierrc.json
+├── vite.config.ts · vitest.config.ts · eslint.config.ts · .prettierrc.json · .prettierignore
 ├── Dockerfile · nginx.conf · security-headers.conf · .dockerignore
 ├── index.html
 ├── public/                       # favicon only; everything else is imported (hashed)
+├── tooling-fixtures/             # negative lint fixtures + check-tooling.ts (never built, §11)
 └── src/
     ├── main.ts                   # createApp, Pinia, router, global styles
     ├── router.ts                 # createWorkbenchRouter(): deep-link routes (§6)
@@ -285,14 +286,28 @@ Follow skill `building-office-scene` and STACK.md §4. Code rules:
 ## 11. Lint and format
 
 - ESLint flat config (`eslint.config.ts`): `eslint-plugin-vue` *recommended* (Vue 3),
-  `@vue/eslint-config-typescript` *strictTypeChecked*, `eslint-plugin-boundaries` with §1.1
-  rules, Prettier compatibility.
+  `@vue/eslint-config-typescript` *strictTypeChecked* and *stylisticTypeChecked*,
+  `eslint-plugin-boundaries` with §1.1 rules (`boundaries/dependencies`), Prettier
+  compatibility through `eslint-config-prettier` (last in the config).
 - Additional rules: `vue/block-order` (`script`, `template`, `style`),
   `vue/component-api-style: ['script-setup']`, `vue/define-macros-order`,
   `vue/no-unused-properties`, `@typescript-eslint/consistent-type-imports`,
-  `no-restricted-imports` for `pixi.js` outside `office-renderer`.
+  `no-restricted-imports` for `pixi.js`/`@pixi/*` outside `office-renderer` and for audio
+  libraries everywhere, `no-restricted-globals` for `Audio`/`AudioContext` (§8.6),
+  `no-restricted-exports` on default exports in `*.ts` except `*.config.ts` (§2 rule 5).
+- Boundaries: `assets/` and the files at the root of `src/` (`main.ts`, `App.vue`,
+  `router.ts`) are not §1.1 modules and stay unclassified; "types" in §1.1 means
+  `import type` only.
+- ESLint loads `eslint.config.ts` with Node's native type stripping
+  (`--flag unstable_native_nodejs_ts_config`, no `jiti`): the config uses erasable syntax only
+  and is type-checked through `tsconfig.node.json`.
 - Prettier: `semi: false`, `singleQuote: true`, `printWidth: 100`, `trailingComma: 'all'`.
-- `vue-tsc --noEmit` in CI.
+- Scripts: `pnpm lint` (`--max-warnings 0`), `pnpm format`, `pnpm format:check`,
+  `pnpm typecheck` (`vue-tsc --build`, no emit), `pnpm check:tooling`.
+- `pnpm check:tooling` runs `tooling-fixtures/check-tooling.ts`: every negative fixture in
+  `tooling-fixtures/src/` (globally ignored by `pnpm lint`) must fail with its expected rule id
+  at its file and line, and `tsconfig.app.json` must set every §2 option. Add a fixture and an
+  expectation whenever a lint rule protects a Constitution or §1.1 rule.
 
 ---
 
