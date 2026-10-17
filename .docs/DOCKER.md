@@ -46,10 +46,11 @@ Every build context has a `.dockerignore` that excludes at least: `.git`, `node_
 `.env` reaches compose only for `${…}` interpolation; the services receive exactly the
 variables under each `environment:` key (no `env_file:`, see §5.1). `.env.example` therefore
 lists the variables compose interpolates as `NAME=value` and the per-service values compose
-fixes itself as commented `# VO_NAME=value` reference entries, each with comment text directly
+fixes itself as commented `# NAME=value` reference entries, each with comment text directly
 above. `python -I scripts/check_env_example.py` enforces all of it: it fails when a `Settings`
-field, a compose `VO_*` name or a compose `${NAME}` interpolation is missing, when an entry has
-the wrong form or no comment, or when it lists a variable nothing reads (BACKEND.md §11.1).
+field, a compose `VO_*` name or a compose `${NAME}`/`$NAME` interpolation is missing, when a
+`Settings` variable is not passed by any compose file, when an entry has the wrong form or no
+comment, or when it lists a variable nothing reads (BACKEND.md §11.1).
 
 ---
 
@@ -233,7 +234,7 @@ services:
     <<: *app-defaults
     image: virtual-office/core:${VO_IMAGE_TAG:?}
     build: { context: services/core, target: runtime }
-    # No env_file: each variable is listed here, `.env` only fills the ${VO_*} placeholders.
+    # No env_file: each variable is listed here, `.env` only fills the ${…} placeholders.
     environment:
       VO_DATABASE_URL: postgresql+asyncpg://core_app:${VO_CORE_DB_PASSWORD:?}@postgres:5432/core
       VO_CATALOG_URL: http://catalog:8001/
