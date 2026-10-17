@@ -421,3 +421,97 @@ None open.
 
 - A package whose modules are all empty is measured as nothing and passes without output;
   correct for the skeleton, and any real statement makes the layer appear.
+
+## US-01.05 — Scaffold the Vue + Vite application
+
+### Round 1 · 2026-10-17 · branch `feat/us-01-05-vue-vite-app` · head `9bf7c29`
+
+**Verdict:** CHANGES REQUESTED
+
+**Quality gate**
+
+Run in the `frontend/Dockerfile` `dev` target (pinned `node:24.22.0-trixie-slim` by digest,
+`pnpm install --frozen-lockfile`) and with `make up` from the repository root.
+
+| Gate | Result |
+| ---- | ------ |
+| `docker compose config -q` | pass |
+| image build (`dev` target, frozen lockfile) | pass |
+| `pnpm typecheck` (`vue-tsc --build`) | pass |
+| `pnpm test` (vitest, 2 files, 2 tests) | pass |
+| `pnpm build` (hashed `dist/assets/index-<hash>.js`) | pass |
+| `make up` + runtime smoke (200 on `/`, SPA fallback, immutable assets, security headers, UID 10001, JSON logs) | pass |
+| ESLint / Prettier | not available (US-01.06) |
+| frontend coverage thresholds | not available (US-01.07) |
+| `no-latest` check | not available (US-01.09); manual grep: 0 hits |
+| Python gates (core, catalog) | not run (diff touches no Python) |
+| Playwright / real browser render | not available (WP14+) |
+
+**Acceptance**
+
+- AC1 — nine `src/` folders with `.gitkeep` (`git ls-files frontend`).
+- AC2 — `frontend/package.json:8-33` pins every dependency exactly to STACK.md §3,
+  `packageManager: pnpm@12.14.0`; `.npmrc` flags mirrored in `pnpm-workspace.yaml` (pnpm 12).
+  Verified by inspection only.
+- AC3 — `pnpm build` produces hashed assets; `frontend/src/App.spec.ts:15` asserts the title.
+- AC4 — `frontend/Dockerfile:3-4` pins both images by tag and digest; `docker-compose.yml`
+  serves on `127.0.0.1:8080`; `make up` serves the placeholder (title checked via HTML shell
+  and jsdom, not a browser).
+
+**Findings**
+
+- [ ] **R1 · Major** — commit `ac7c8d2` — subject `feat(frontend): render the My Workbench
+  placeholder with Pinia and router` is 73 characters, over the 72 limit (AGENTS.md rule 16).
+  Suggested fix: reword on the feature branch, e.g. `feat(frontend): render My Workbench
+  placeholder with Pinia and router` (69).
+- [ ] **R2 · Minor** — `frontend/src/router.ts:12` — the root route uses an inline
+  `{ name, render: () => null }` component object, against FRONTEND.md §3 rule 1
+  (`<script setup lang="ts">` SFCs only); `frontend/src/App.vue:3-7` has no `<RouterView/>`,
+  so routes never render. Suggested fix: add `src/windows/WorkbenchDesktop.vue` (empty
+  `<script setup lang="ts">`), point the route at it and render `<RouterView/>` in `App.vue`.
+- [ ] **R3 · Minor** — `frontend/Dockerfile:33-35` — nginx config and `dist` are
+  `--chown=10001:10001`, so the runtime can rewrite its own config and web root (DOCKER.md
+  §4.1 least privilege). Suggested fix: copy them root-owned (0644), keep the chown on
+  `/var/cache/nginx` only; update the DOCKER.md §4.3 snippet.
+- [ ] **R4 · Minor** — `frontend/nginx.conf:38` — `/ws` does not forward `X-Forwarded-For` /
+  `X-Forwarded-Proto` while `/api/` does (`:34-35`); core trusts proxy headers. Suggested fix:
+  add the same two `proxy_set_header` lines to `/ws`.
+- [ ] **R5 · Minor** — `frontend/Dockerfile:41-43` — `COPY . ./` then `chown -R /app` duplicates
+  the tree (including `node_modules`) in a second layer (DOCKER.md §4.1: `COPY --chown`).
+  Suggested fix: create the user first and use `COPY --chown=10001:10001`.
+- [ ] **R6 · Minor** — `frontend/Dockerfile:42` — the dev user has `--no-create-home`, so `HOME`
+  points to a missing directory where pnpm/corepack write cache and state (same class of issue
+  as ADR-0008 `UV_CACHE_DIR`). Suggested fix: `ENV HOME=/tmp` (or `XDG_*` to `/tmp`) and
+  confirm `pnpm typecheck && pnpm test && pnpm build` as UID 10001.
+- [ ] **R7 · Minor** — `.docs/STACK.md:30` — §1 rule 4 still says only `save-exact=true` in
+  `.npmrc`; pnpm 12 ignores it and the branch enforces `saveExact`/`engineStrict` in
+  `frontend/pnpm-workspace.yaml`. STACK.md outranks FRONTEND.md. Suggested fix: add the
+  `pnpm-workspace.yaml` settings to STACK.md §1.4.
+- [ ] **R8 · Minor** — `.docs/FRONTEND.md:28` — layout says `App.vue # <WorkbenchScreen/>`
+  while the code renders a placeholder `<h1>`. Suggested fix: note "(placeholder until WP08)"
+  or record the gap in the story ADR.
+- [ ] **R9 · Minor** — `frontend/package.json:8-33` — AC2 pins are checked only by inspection;
+  no automated check fails on a `^` range or drift from STACK.md §3 (`scripts/check_python_pins.py`
+  covers Python only). Suggested fix: extend the pin check to `frontend/package.json`, or record
+  the deferral to US-01.09/US-01.10 in the story ADR.
+- [ ] **R10 · Minor** — `frontend/Dockerfile:22-37`, `docker-compose.yml` — AC3/AC4 verified by
+  hand only. Suggested fix: state in the story ADR that WP02/WP03 smoke and healthchecks
+  automate them.
+- [ ] **R11 · Nit** — `frontend/Dockerfile:6` — no `base` stage (DOCKER.md §4.1 lists
+  `base → deps → build → runtime`). Suggested fix: add it, or document the Node exception.
+- [ ] **R12 · Nit** — `frontend/nginx.conf:38` — prefix `location /ws` also matches `/wsfoo`.
+  Suggested fix: `location = /ws` (and DOCKER.md §4.3).
+- [ ] **R13 · Nit** — no favicon; `/favicon.ico` falls through to `index.html` with 200 HTML.
+  Suggested fix: placeholder favicon in `public/`, or `location = /favicon.ico { return 404; }`.
+- [ ] **R14 · Nit** — `frontend/src/router.ts:15` — the `'web' | 'memory'` switch is a test seam
+  in the production API. Suggested fix: inject `history: RouterHistory = createWebHistory()`.
+- [ ] **R15 · Nit** — `frontend/src/App.vue:4-5` — placeholder uses browser defaults, no
+  DESIGN.md tokens; acceptable until WP07 tokens exist. Suggested fix: say so in the story ADR.
+
+**Notes**
+
+- Pins, digests, lockfile integrity and the compose entry follow STACK.md and ADR-0004/0005/0006.
+- nginx re-includes security headers in every location, has `/healthz`, SPA fallback, correct
+  cache policy, JSON logs and `server_tokens off`.
+- Commit bodies document the pnpm 12 `.npmrc` behaviour well; for the ADR: no `@` alias yet,
+  `depends_on: [core]` because nginx needs a resolvable upstream (WP02 hardens).
