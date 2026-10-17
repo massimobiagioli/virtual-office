@@ -145,7 +145,7 @@ def test_uses_the_vo_prefix_when_a_settings_module_declares_none(tmp_path: Path)
     assert main(["--root", str(root)]) == 0
 
 
-@pytest.mark.parametrize("comment", ["#", "# ", "# --- Section ---", "# ===="])
+@pytest.mark.parametrize("comment", ["#", "# ", "# ...", "# --- Section ---", "# ===="])
 def test_fails_when_the_comment_above_has_no_text(
     tmp_path: Path, capsys: pytest.CaptureFixture[str], comment: str
 ) -> None:
@@ -230,6 +230,14 @@ def test_requires_every_variable_compose_interpolates(
     assert main(["--root", str(root)]) == 1
     assert "docker-compose.yml:9: POSTGRES_PASSWORD missing" in capsys.readouterr().out
 
+
+
+def test_ignores_an_escaped_interpolation(tmp_path: Path) -> None:
+    root = write_repository(tmp_path)
+    compose = COMPOSE + '    command: ["sh", "-c", "echo $${BAR}"]\n'
+    (root / "docker-compose.yml").write_text(compose, encoding="utf-8")
+
+    assert main(["--root", str(root)]) == 0
 
 def test_ignores_variables_named_only_in_a_trailing_comment(tmp_path: Path) -> None:
     root = write_repository(tmp_path)
