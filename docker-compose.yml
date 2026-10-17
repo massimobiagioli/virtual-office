@@ -5,6 +5,19 @@
 name: virtual-office
 
 services:
+  frontend:
+    # Same temporary image tag default as core (ADR-0006); WP02 makes it required.
+    image: virtual-office/frontend:${VO_IMAGE_TAG:-dev}
+    build:
+      context: frontend
+      target: runtime
+    # The only published port of the stack, bound to the loopback interface (DOCKER.md §5.2).
+    ports:
+      - "127.0.0.1:8080:8080"
+    # nginx resolves `core` (the /api and /ws upstream) at start-up; WP02 waits for it healthy.
+    depends_on:
+      - core
+
   core:
     # DOCKER.md §3 wants ${VO_IMAGE_TAG:?}; the `dev` default keeps `make status|logs|down`
     # working on a clean clone until .env.example exists (US-01.08). WP02 makes it required.
