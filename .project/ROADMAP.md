@@ -317,7 +317,7 @@ virtual-office/
 └── .github/pull_request_template.md
 ```
 
-Key decisions applied (no new decisions are taken in WP01):
+Key decisions applied (decisions taken in WP01 are recorded in story ADRs):
 
 1. **One lockfile per subproject** (`services/core`, `services/catalog`, `frontend/`),
    committed; each subproject is its own Docker build context (ADR-0004).
