@@ -1,3 +1,5 @@
+import { fileURLToPath } from 'node:url'
+
 import { defineConfig, mergeConfig } from 'vitest/config'
 
 import viteConfig from './vite.config.ts'
@@ -13,6 +15,8 @@ export default mergeConfig(
     test: {
       environment: 'jsdom',
       include: ['src/**/*.spec.ts'],
+      // Absolute, so a run with another `--root` (the coverage fixture) loads it too.
+      setupFiles: [fileURLToPath(new URL('./vitest.setup.ts', import.meta.url))],
       coverage: {
         provider: 'v8',
         enabled: true,
