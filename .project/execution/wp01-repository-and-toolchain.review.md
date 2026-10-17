@@ -503,10 +503,10 @@ Run in the `frontend/Dockerfile` `dev` target (pinned `node:24.22.0-trixie-slim`
   covers Python only). Suggested fix: extend the pin check to `frontend/package.json`, or record
   the deferral to US-01.09/US-01.10 in the story ADR.
   → Resolved in 3ee2048: `scripts/check_frontend_pins.py` (stdlib, `python -I`) with 9 tests; exits 0 on the repository.
-- [x] **R10 · Minor** — `frontend/Dockerfile:22-37`, `docker-compose.yml` — AC3/AC4 verified by
+- [ ] **R10 · Minor** — `frontend/Dockerfile:22-37`, `docker-compose.yml` — AC3/AC4 verified by
   hand only. Suggested fix: state in the story ADR that WP02/WP03 smoke and healthchecks
   automate them.
-  → Resolved at close: the story ADR records that AC3/AC4 are verified by hand and WP02 (healthchecks) / WP03 (CI smoke) automate them.
+  → Deferred to /feature-close (story ADR): record that AC3/AC4 are verified by hand and WP02 (healthchecks) / WP03 (CI smoke) automate them.
 - [x] **R11 · Nit** — `frontend/Dockerfile:6` — no `base` stage (DOCKER.md §4.1 lists
   `base → deps → build → runtime`). Suggested fix: add it, or document the Node exception.
   → Resolved in f069ce3: `base` stage added (user, WORKDIR, corepack).
@@ -519,9 +519,9 @@ Run in the `frontend/Dockerfile` `dev` target (pinned `node:24.22.0-trixie-slim`
 - [x] **R14 · Nit** — `frontend/src/router.ts:15` — the `'web' | 'memory'` switch is a test seam
   in the production API. Suggested fix: inject `history: RouterHistory = createWebHistory()`.
   → Resolved in 7530c13: `createWorkbenchRouter(history: RouterHistory = createWebHistory())`; specs inject `createMemoryHistory()`.
-- [x] **R15 · Nit** — `frontend/src/App.vue:4-5` — placeholder uses browser defaults, no
+- [ ] **R15 · Nit** — `frontend/src/App.vue:4-5` — placeholder uses browser defaults, no
   DESIGN.md tokens; acceptable until WP07 tokens exist. Suggested fix: say so in the story ADR.
-  → Resolved at close: `App.vue` comment says browser defaults until WP07 tokens (7530c13); the story ADR records it.
+  → Deferred to /feature-close (story ADR): `App.vue` comment says browser defaults until WP07 tokens (7530c13); the ADR must record it.
 
 **Rework:** 2026-10-17 · head 3ee2048 · gates: frontend `dev` image as UID 10001 `pnpm typecheck`,
 `pnpm test` (2 files, 3 tests), `pnpm build` pass; `docker compose config -q` pass; `make up` +
@@ -566,24 +566,37 @@ still pending until `/feature-close` writes the story ADR (see R17).
 
 **Findings**
 
-- [ ] **R16 · Minor** — `frontend/Dockerfile:51` — the non-recursive chown (R5) leaves
+- [x] **R16 · Minor** — `frontend/Dockerfile:51` — the non-recursive chown (R5) leaves
   `node_modules/.bin` and `.modules.yaml` root-owned, so every `pnpm <script>` as UID 10001
   prints `ERR_PNPM_PACKAGE_MANAGER_REMOVE_MODULES_DIR … Permission denied` from
   `verifyDepsBeforeRun`; gates pass only because it is a warning. Suggested fix: chown those
   paths too (or disable `verifyDepsBeforeRun` with a reason) and confirm no `ERR_PNPM` output.
-- [ ] **R17 · Minor** — `.project/execution/wp01-repository-and-toolchain.review.md` (Round 1
+  → Resolved in c869458: root cause was the 0600 root-owned `node_modules/.pnpm-workspace-state-v1.json` (unreadable, so pnpm assumed stale deps and tried a reinstall); the dev stage chowns that file (855 B layer); `pnpm typecheck && pnpm test && pnpm build` as UID 10001 print no `ERR_PNPM`; DOCKER.md §4.3 synced.
+- [x] **R17 · Minor** — `.project/execution/wp01-repository-and-toolchain.review.md` (Round 1
   R10, R15) — ticked "Resolved at close" although no ADR exists yet (feature-rework.md:32-33,
   AGENTS.md rule 15). Suggested fix: mark them "Deferred to /feature-close (story ADR)" until
   close records them and writes the ADR id.
-- [ ] **R18 · Minor** — `.docs/FRONTEND.md:36` — the §1 layout does not show the new
+  → Resolved in this rework (review file): Round 1 R10 and R15 unticked and marked "Deferred to /feature-close (story ADR)".
+- [x] **R18 · Minor** — `.docs/FRONTEND.md:36` — the §1 layout does not show the new
   `src/windows/WorkbenchDesktop.vue`; `windows/` is described as "one folder per Workbench
   window". Suggested fix: add a layout line for the root-route view (moved/reshaped in WP08).
-- [ ] **R19 · Nit** — `.docs/FRONTEND.md:18-19` — no pointer to `scripts/check_frontend_pins.py`
+  → Resolved in 7dbcc12: §1 layout lists `windows/WorkbenchDesktop.vue` as the root-route placeholder reshaped in WP08.
+- [x] **R19 · Nit** — `.docs/FRONTEND.md:18-19` — no pointer to `scripts/check_frontend_pins.py`
   (only STACK.md §1.4 and BACKEND.md mention it). Suggested fix: one line next to the
   `.npmrc` / `pnpm-workspace.yaml` entries.
-- [ ] **R20 · Nit** — `scripts/check_frontend_pins.py:81-84` — no test for a STACK.md §3 without
+  → Resolved in 7dbcc12: §1 layout points to `scripts/check_frontend_pins.py` (BACKEND.md §11) under `pnpm-workspace.yaml`.
+- [x] **R20 · Nit** — `scripts/check_frontend_pins.py:81-84` — no test for a STACK.md §3 without
   a Node.js/pnpm row (branch uncovered, file at 94 %). Suggested fix: one fixture test expecting
   exit 1 and the message.
+  → Resolved in 302f133: fixture test without the Node.js/pnpm rows expects exit 1 and the message; file at 98 % (only `__main__` uncovered).
+
+**Rework:** 2026-10-17 · head 7dbcc12 · gates: frontend `dev` image as UID 10001
+`pnpm typecheck && pnpm test` (2 files, 3 tests) `&& pnpm build` exit 0 with 0 `ERR_PNPM`/warn
+lines; `docker compose config -q` pass; `make up` + curl smoke (`/` and deep link 200, `/healthz`
+200, `/favicon.ico` 404, `/wsfoo` SPA fallback 200, CSP and nosniff headers) pass, `make down`;
+core `dev` image: `pytest scripts/tests` 32 passed (branch coverage 96 %), `ruff check`,
+`ruff format --check`, `mypy --strict` on `scripts/` pass, `check_frontend_pins.py` exit 0.
+ESLint/Prettier, frontend coverage, `no-latest`, Playwright: not available.
 
 **Notes**
 
