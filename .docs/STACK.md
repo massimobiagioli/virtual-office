@@ -30,6 +30,8 @@ tools. Changing anything here requires a repository ADR.
      `save-exact=true` and `engine-strict=true` in `.npmrc`, and `saveExact: true` and
      `engineStrict: true` in `frontend/pnpm-workspace.yaml` (pnpm 12 reads its settings from
      there and ignores those `.npmrc` keys).
+     `scripts/check_frontend_pins.py` fails on any `package.json` pin, `packageManager` or
+     `engines` entry that differs from §3.
    - Python: exact `==` pins in `pyproject.toml` for direct dependencies, `uv.lock` committed.
    - Ollama models: explicit size/quantization tag (`qwen3.6:27b`), never bare names.
 5. **Compatibility beats novelty, explicitly.** When the newest release of a tool is
