@@ -138,10 +138,12 @@ ARG NODE_IMAGE=node:24.22.0-trixie-slim@sha256:<digest>
 ARG NGINX_IMAGE=nginxinc/nginx-unprivileged:1.31.7-alpine3.24@sha256:<digest>
 
 FROM ${NODE_IMAGE} AS deps
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0 COREPACK_HOME=/opt/corepack
 WORKDIR /app
 RUN corepack enable
-COPY package.json pnpm-lock.yaml .npmrc ./
-RUN --mount=type=cache,target=/root/.local/share/pnpm/store pnpm install --frozen-lockfile
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
+RUN corepack install && chmod -R a+rX /opt/corepack
+RUN --mount=type=cache,target=/pnpm-store pnpm install --frozen-lockfile --store-dir /pnpm-store
 
 FROM deps AS build
 COPY . ./
@@ -149,12 +151,20 @@ ARG VITE_APP_VERSION
 RUN pnpm build
 
 FROM ${NGINX_IMAGE} AS runtime
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-COPY --from=build /app/dist /usr/share/nginx/html
+USER root
+RUN addgroup -g 10001 -S app && adduser -u 10001 -G app -S -D -H app \
+    && chown -R 10001:10001 /var/cache/nginx
+COPY --chown=10001:10001 nginx.conf /etc/nginx/conf.d/default.conf
+COPY --chown=10001:10001 security-headers.conf /etc/nginx/security-headers.conf
+COPY --from=build --chown=10001:10001 /app/dist /usr/share/nginx/html
+USER 10001
 EXPOSE 8080
 
 FROM deps AS dev
 COPY . ./
+RUN groupadd --gid 10001 app && useradd --uid 10001 --gid app --no-create-home app \
+    && chown -R 10001:10001 /app
+USER 10001
 EXPOSE 5173
 ENTRYPOINT ["pnpm", "dev", "--host", "0.0.0.0"]
 ```
@@ -164,7 +174,8 @@ to `index.html`; `location /api/` and `location /ws` proxied
 to `http://core:8000` (WebSocket upgrade headers, `proxy_read_timeout 3600s` for `/ws`);
 `Cache-Control: public, max-age=31536000, immutable` for `/assets/`; `no-cache` for
 `index.html`; security headers (`Content-Security-Policy`, `X-Content-Type-Options`,
-`Referrer-Policy`, `Permissions-Policy`); `server_tokens off`; JSON access log to stdout.
+`Referrer-Policy`, `Permissions-Policy`, kept in `security-headers.conf` and included by every
+location that sets its own `add_header`); `server_tokens off`; JSON access log to stdout.
 
 ---
 
@@ -308,6 +319,7 @@ Raw commands, for everything the Makefile does not wrap:
 | Backend tests                        | `docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm core pytest` |
 | Backend lint and types               | `docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm core sh -c "ruff check && ruff format --check && mypy && lint-imports"` |
 | Frontend tests and checks            | `docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm frontend sh -c "pnpm lint && pnpm typecheck && pnpm test"` |
+| Frontend checks until the dev overlay exists (WP02) | `docker build --target dev -t vo-frontend-dev frontend && docker run --rm --entrypoint sh vo-frontend-dev -c "pnpm typecheck && pnpm test && pnpm build"` |
 | Run migrations manually              | `docker compose run --rm migrate-core` |
 | Rebuild projections                  | `docker compose --profile admin run --rm rebuild-projections` |
 | Backup database                      | `docker compose --profile backup run --rm backup` |
