@@ -19,5 +19,11 @@
     "allowImportingTsExtensions": true,
     "types": ["node"]
   },
-  "include": ["vite.config.ts", "vitest.config.ts", "eslint.config.ts", "tooling-fixtures/*.ts"]
+  "include": [
+    "vite.config.ts",
+    "vitest.config.ts",
+    "vitest.setup.ts",
+    "eslint.config.ts",
+    "tooling-fixtures/*.ts"
+  ]
 }

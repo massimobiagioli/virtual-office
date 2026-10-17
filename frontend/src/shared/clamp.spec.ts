@@ -11,6 +11,12 @@ const bounds = fc
   )
   .map(([a, b]) => (a <= b ? { min: a, max: b } : { min: b, max: a }))
 
+describe('property tests', () => {
+  it('run with the fixed seed of vitest.setup.ts', () => {
+    expect(fc.readConfigureGlobal().seed).toBeTypeOf('number')
+  })
+})
+
 describe('clamp', () => {
   it('keeps a value that is already inside the range', () => {
     expect(clamp(3, 1, 5)).toBe(3)
