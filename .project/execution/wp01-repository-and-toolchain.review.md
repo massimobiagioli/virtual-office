@@ -686,7 +686,7 @@ Run in the `frontend/Dockerfile` `dev` target as UID 10001 and in the core `dev`
 - [x] **R10 · Minor** — `frontend/pnpm-workspace.yaml:6-10` — `minimumReleaseAgeExclude:
   eslint@10.13.0` disables a supply-chain control and is undocumented in STACK.md §1.4; the
   quarantine expires within about a day of 2026-10-16. Suggested fix: remove it once the lock
-  resolves without it, or document a release-age policy in STACK.md §1 / the ADR. → Resolved in 7c12cac: a frozen install without the entry still fails on 2026-10-17 (eslint 10.13.0 published 2026-10-16T14:24Z), so it stays; STACK.md §1.4 documents the exemption policy and removal trigger.
+  resolves without it, or document a release-age policy in STACK.md §1 / the ADR. → Resolved in 7c12cac: a frozen install without the entry still fails on 2026-10-17 (eslint 10.13.0 published 2026-10-16T14:24Z), so it stays; STACK.md §1.4 documents the exemption policy and removal trigger. Recording the policy in an ADR → Deferred to /feature-close (story ADR), see Round 2 R18.
 - [x] **R11 · Minor** — `frontend/eslint.config.ts:135` — `ui-amiga → composables` allows every
   composable, though §1.1 says "generic ones only" (composables may reach stores). Suggested fix:
   document the limitation in FRONTEND.md §11 or classify generic composables separately. → Resolved in 2136ae1: limitation documented in FRONTEND.md §11 (generic-only checked in review); §1.1 unchanged.
@@ -743,45 +743,68 @@ R8 and R9 remain open, deferred to the story ADR at `/feature-close`.
 
 **Findings**
 
-- [ ] **R17 · Minor** — `.docs/STACK.md:39-40` — the release-age bullet was inserted inside the
+- [x] **R17 · Minor** — `.docs/STACK.md:39-40` — the release-age bullet was inserted inside the
   npm bullet, so the `check_frontend_pins.py` sentence now reads as part of the quarantine policy.
   Suggested fix: move lines 39-40 back to the end of the npm bullet (or their own bullet).
+  → Resolved in 29e4fc1: the `check_frontend_pins.py` sentence is back at the end of the npm pins bullet; the release-age policy is its own bullet.
 - [ ] **R18 · Minor** — `.docs/STACK.md:10-11,33-38` — "Changing anything here requires a
   repository ADR", but the new §1.4 release-age policy has none and R10 does not defer it.
   Suggested fix: mark it "Deferred to /feature-close (story ADR)" and record it in the story ADR.
-- [ ] **R19 · Minor** — `.docs/STACK.md:37-38`, `frontend/pnpm-workspace.yaml:8-9` — the removal
+  → Deferred to /feature-close (story ADR): the release-age exemption policy (STACK.md §1.4) is recorded in the story ADR.
+- [x] **R19 · Minor** — `.docs/STACK.md:37-38`, `frontend/pnpm-workspace.yaml:8-9` — the removal
   trigger joins two conditions, so the exemption lingers as dead config until the next eslint bump.
   Suggested fix: "removed as soon as a frozen install passes without it, and at the latest at the
   next update of that package".
-- [ ] **R20 · Minor** — `frontend/eslint.config.ts:152` — the `office-engine` disallow list omits
+  → Resolved in 29e4fc1: the STACK.md §1.4 and `pnpm-workspace.yaml` removal trigger now reads "removed as soon as a frozen install passes without it, and at the latest at the next update of that package".
+- [x] **R20 · Minor** — `frontend/eslint.config.ts:152` — the `office-engine` disallow list omits
   `@vue/*` (FRONTEND.md:309-310, §1.1 "no `vue`"). Suggested fix: one shared `frameworkPackages`
   constant for both policies.
-- [ ] **R21 · Minor** — `frontend/tooling-fixtures/src/shared/imports-vue.ts:2-4` — no fixture
+  → Resolved in 26e5dd7: one `frameworkPackages` constant (`vue`, `vue-router`, `pinia`, `@vue/*`) disallowed for `shared`, `api`, `office-engine` and `office-renderer`; FRONTEND.md §11 updated.
+- [x] **R21 · Minor** — `frontend/tooling-fixtures/src/shared/imports-vue.ts:2-4` — no fixture
   imports a `@vue/*` package, so that entry is never proven (ADR-0009). Suggested fix: add a
   `@vue/reactivity` line with its expectation here and in `office-engine` (after R20).
-- [ ] **R22 · Minor** — `frontend/eslint.config.ts:31-61` — importing an audio asset
+  → Resolved in 26e5dd7: `@vue/reactivity` fixture lines in `shared/imports-vue.ts` and `office-engine/imports-vue.ts` with expectations; mutation dropping `@vue/*` fails the check.
+- [x] **R22 · Minor** — `frontend/eslint.config.ts:31-61` — importing an audio asset
   (`*.mp3`, `*.ogg`, …) still passes lint, though FRONTEND.md:42,249 say "no audio files"
   (Constitution §14.10). Suggested fix: an audio-extension group in `no-restricted-imports` with a
   fixture line, or state in FRONTEND.md §11 that WP12's asset check covers it.
-- [ ] **R23 · Nit** — `frontend/eslint.config.ts:53-56` — `audioElementCreation` matches only the
+  → Resolved in 4bde2f4: `no-restricted-imports` regex group for audio files (`.aac .aif .aiff .flac .m4a .mid .midi .mp3 .oga .ogg .opus .wav .weba`, any case, optional Vite `?query`), global and in the `office-renderer` override; fixture lines in `shared/uses-audio.ts` (incl. `chime.OGG?url`) and `office-renderer/imports-sound.ts`; FRONTEND.md §11 lists them.
+- [x] **R23 · Nit** — `frontend/eslint.config.ts:53-56` — `audioElementCreation` matches only the
   literal `'audio'`; misses `createElement('video')`, template literals, `createElementNS`.
   Suggested fix: extend to `/^(audio|video)$/i`, or list the limit in FRONTEND.md §8.6/§11.
-- [ ] **R24 · Nit** — `frontend/eslint.config.ts:59` — `:has(...)` matches descendants, so
+  → Resolved in 3b93b69: `createElement`/`createElementNS` with `audio`/`video` (any case) as a string or static template literal; one fixture line per selector; computed tag names documented as a review-checked limit in FRONTEND.md §11.
+- [x] **R24 · Nit** — `frontend/eslint.config.ts:59` — `:has(...)` matches descendants, so
   `<source muted>` would satisfy the `<video>` rule. Suggested fix: restrict to the `VStartTag`'s
   own attributes, or note it.
-- [ ] **R25 · Nit** — `frontend/eslint.config.ts:135-139` — the catch-all lets `office-renderer`
+  → Resolved in 9efb51b: the selector checks the `<video>`'s own `VStartTag`; fixture `<video><source muted /></video>` fails, the muted positive stays clean.
+- [x] **R25 · Nit** — `frontend/eslint.config.ts:135-139` — the catch-all lets `office-renderer`
   import `vue`/`pinia`/`vue-router`; FRONTEND.md §1.1 lists only PixiJS for it. Suggested fix: add
   the framework disallow, or state in §11 that it is accepted.
-- [ ] **R26 · Nit** — `frontend/tooling-fixtures/tsconfig.json:2` — comment says "negative fixtures
+  → Resolved in 26e5dd7: `office-renderer` disallows the framework packages (OfficeCanvas.vue lives in `windows/office/`, ROADMAP.md); fixture `office-renderer/imports-vue.ts` (4 lines).
+- [x] **R26 · Nit** — `frontend/tooling-fixtures/tsconfig.json:2` — comment says "negative fixtures
   only" but positives live there too. Suggested fix: "lint fixtures".
-- [ ] **R27 · Nit** — `frontend/tooling-fixtures/check-tooling.ts:178` — `describe` lacks an
+  → Resolved in ab54b0b: tsconfig comment and FRONTEND.md §1 layout say "lint fixtures (negative and positive)".
+- [x] **R27 · Nit** — `frontend/tooling-fixtures/check-tooling.ts:178` — `describe` lacks an
   explicit return type and shadows the Vitest global. Suggested fix: `formatMessage(...): string`.
-- [ ] **R28 · Nit** — `.docs/FRONTEND.md:250-251` — "Web Audio and speech globals" omits
+  → Resolved in 08c7aef: renamed to `formatMessage(...): string`.
+- [x] **R28 · Nit** — `.docs/FRONTEND.md:250-251` — "Web Audio and speech globals" omits
   `HTMLAudioElement`. Suggested fix: reword or point to §11.
-- [ ] **R29 · Nit** — `.docs/DOCKER.md:329` — the compose gate line lacks `pnpm build`, unlike
+  → Resolved in 3b93b69: FRONTEND.md §8.6 names `HTMLAudioElement`, audio files and script-created media elements, and points to §11 for the full lists.
+- [x] **R29 · Nit** — `.docs/DOCKER.md:329` — the compose gate line lacks `pnpm build`, unlike
   `:330`. Suggested fix: add it.
-- [ ] **R30 · Nit** — `.project/ROADMAP.md:444` — deliverables still list only `@pixi/sound` and
+  → Resolved in 84c5e1d: the compose gate line runs `pnpm build` too.
+- [x] **R30 · Nit** — `.project/ROADMAP.md:444` — deliverables still list only `@pixi/sound` and
   `Audio`/`AudioContext`. Suggested fix: update, or leave as plan text.
+  → Resolved in b23b0d7: the WP01 `eslint.config.ts` deliverable row summarizes the no-audio rules and points to FRONTEND.md §11.
+
+**Rework:** 2026-10-17 · head b23b0d7 · gates: fresh `dev` image as UID 10001 `pnpm lint`,
+`format:check`, `typecheck`, `test` (2 files, 3 tests), `build`, `check:tooling` (45 expected
+errors, 11 clean positive fixtures) pass, 0 `ERR_PNPM` lines; container mutation run on the new
+rules (9 mutations: renderer/engine framework ban, `@vue/*`, both audio-file groups, each
+`createElement` selector, the `<video>` descendant selector) all caught; runtime target build
+pass (UID 10001, no fixtures in the web root); `docker compose config -q` pass; core `dev`
+image: `check_frontend_pins.py` exit 0, `pytest scripts/tests` 32 passed; coverage n/a
+(US-01.07), CI n/a (WP03).
 
 **Notes**
 
