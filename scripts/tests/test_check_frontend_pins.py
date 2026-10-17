@@ -39,9 +39,9 @@ PACKAGE = """{
 """
 
 
-def write_repository(root: Path, package: str = PACKAGE) -> Path:
+def write_repository(root: Path, package: str = PACKAGE, stack: str = STACK) -> Path:
     (root / ".docs").mkdir()
-    (root / ".docs" / "STACK.md").write_text(STACK, encoding="utf-8")
+    (root / ".docs" / "STACK.md").write_text(stack, encoding="utf-8")
     (root / "frontend").mkdir()
     (root / "frontend" / "package.json").write_text(package, encoding="utf-8")
     return root
@@ -95,3 +95,15 @@ def test_fails_with_file_and_dependency(
 
     assert main(["--root", str(root)]) == 1
     assert f"frontend/package.json: {message}" in capsys.readouterr().out
+
+
+def test_fails_when_the_stack_lists_no_node_or_pnpm_version(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    stack = "\n".join(
+        line for line in STACK.splitlines() if "Node.js" not in line and "| pnpm |" not in line
+    )
+    root = write_repository(tmp_path, stack=stack)
+
+    assert main(["--root", str(root)]) == 1
+    assert ".docs/STACK.md: §3 lists no version for node.js, pnpm" in capsys.readouterr().out
