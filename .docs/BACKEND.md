@@ -471,6 +471,7 @@ From the repository root, with any Python 3.15 (stdlib only):
 python -I scripts/check_coverage.py services/<service>/coverage.json --package <package>
 python -I scripts/check_service_config_drift.py
 python -I scripts/check_python_pins.py
+python -I scripts/check_frontend_pins.py
 ```
 
 `scripts/` is linted with the core rules (`scripts/ruff.toml` extends
