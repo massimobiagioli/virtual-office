@@ -34,6 +34,11 @@ describe('clamp', () => {
     expect(() => clamp(3, 5, 1)).toThrow(RangeError)
   })
 
+  it('rejects a range with a NaN bound', () => {
+    expect(() => clamp(3, Number.NaN, 5)).toThrow(RangeError)
+    expect(() => clamp(3, 1, Number.NaN)).toThrow(RangeError)
+  })
+
   it('always returns a value inside the range', () => {
     fc.assert(
       fc.property(fc.double({ noNaN: true }), bounds, (value, { min, max }) => {
