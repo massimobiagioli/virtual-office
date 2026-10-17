@@ -675,18 +675,18 @@ Run in the `frontend/Dockerfile` `dev` target as UID 10001 and in the core `dev`
   `tooling-fixtures/src/shared/default-export.ts` plus expectation. → Resolved in 571ee84: `shared/default-export.ts` fails with `no-restricted-exports`.
 - [x] **R7 · Minor** — `.docs/FRONTEND.md:250-251,296` — says `no-restricted-globals` covers
   `Audio`/`AudioContext` only; config bans more. Suggested fix: list the full sets (after R1). → Resolved in 2136ae1: FRONTEND.md §8.6 and §11 list the full rule sets.
-- [ ] **R8 · Minor** — `frontend/eslint.config.ts:47` + `tooling-fixtures/` — ADR-0009
+- [x] **R8 · Minor** — `frontend/eslint.config.ts:47` + `tooling-fixtures/` — ADR-0009
   Alternative 3 rejected committed, lint-excluded fixtures; the departure (typed linting needs a
   tsconfig; ignore scoped to `tooling-fixtures/src/`) is not recorded. Suggested fix: record it in
-  the story ADR. → Deferred to /feature-close (story ADR).
-- [ ] **R9 · Minor** — `frontend/package.json:17`, `frontend/eslint.config.ts:1-2` — ESLint's
+  the story ADR. → Resolved in ADR-0011 (Decision 1, Alternative 1): committed fixtures with their own tsconfig, ignore scoped to `tooling-fixtures/src/`, linted with `ignore: false` and asserted by rule id/file/line/severity; positives must lint clean.
+- [x] **R9 · Minor** — `frontend/package.json:17`, `frontend/eslint.config.ts:1-2` — ESLint's
   `unstable_native_nodejs_ts_config` flag can be renamed/removed in a minor release (spirit of
   STACK.md §1.1 "stable only"). Suggested fix: record in the story ADR with rejected alternatives
-  (`jiti`, `eslint.config.js`) and a re-check trigger; optionally a STACK.md §9 watch row. → Deferred to /feature-close (story ADR).
+  (`jiti`, `eslint.config.js`) and a re-check trigger; optionally a STACK.md §9 watch row. → Resolved in ADR-0011 (Decision 2, Alternative 2): native type stripping with the flag, `jiti` and `eslint.config.js` rejected, re-check at every ESLint update and when the flag becomes stable or is removed.
 - [x] **R10 · Minor** — `frontend/pnpm-workspace.yaml:6-10` — `minimumReleaseAgeExclude:
   eslint@10.13.0` disables a supply-chain control and is undocumented in STACK.md §1.4; the
   quarantine expires within about a day of 2026-10-16. Suggested fix: remove it once the lock
-  resolves without it, or document a release-age policy in STACK.md §1 / the ADR. → Resolved in 7c12cac: a frozen install without the entry still fails on 2026-10-17 (eslint 10.13.0 published 2026-10-16T14:24Z), so it stays; STACK.md §1.4 documents the exemption policy and removal trigger. Recording the policy in an ADR → Deferred to /feature-close (story ADR), see Round 2 R18.
+  resolves without it, or document a release-age policy in STACK.md §1 / the ADR. → Resolved in 7c12cac: a frozen install without the entry still fails on 2026-10-17 (eslint 10.13.0 published 2026-10-16T14:24Z), so it stays; STACK.md §1.4 documents the exemption policy and removal trigger. Recording the policy in an ADR → Resolved in ADR-0011 (Decision 3), see Round 2 R18.
 - [x] **R11 · Minor** — `frontend/eslint.config.ts:135` — `ui-amiga → composables` allows every
   composable, though §1.1 says "generic ones only" (composables may reach stores). Suggested fix:
   document the limitation in FRONTEND.md §11 or classify generic composables separately. → Resolved in 2136ae1: limitation documented in FRONTEND.md §11 (generic-only checked in review); §1.1 unchanged.
@@ -747,10 +747,10 @@ R8 and R9 remain open, deferred to the story ADR at `/feature-close`.
   npm bullet, so the `check_frontend_pins.py` sentence now reads as part of the quarantine policy.
   Suggested fix: move lines 39-40 back to the end of the npm bullet (or their own bullet).
   → Resolved in 29e4fc1: the `check_frontend_pins.py` sentence is back at the end of the npm pins bullet; the release-age policy is its own bullet.
-- [ ] **R18 · Minor** — `.docs/STACK.md:10-11,33-38` — "Changing anything here requires a
+- [x] **R18 · Minor** — `.docs/STACK.md:10-11,33-38` — "Changing anything here requires a
   repository ADR", but the new §1.4 release-age policy has none and R10 does not defer it.
   Suggested fix: mark it "Deferred to /feature-close (story ADR)" and record it in the story ADR.
-  → Deferred to /feature-close (story ADR): the release-age exemption policy (STACK.md §1.4) is recorded in the story ADR.
+  → Resolved in ADR-0011 (Decision 3, Alternative 3): the STACK.md §1.4 release-age exemption policy and the current `eslint@10.13.0` entry are recorded.
 - [x] **R19 · Minor** — `.docs/STACK.md:37-38`, `frontend/pnpm-workspace.yaml:8-9` — the removal
   trigger joins two conditions, so the exemption lingers as dead config until the next eslint bump.
   Suggested fix: "removed as soon as a frozen install passes without it, and at the latest at the

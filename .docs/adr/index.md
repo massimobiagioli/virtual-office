@@ -20,6 +20,7 @@ in the same change.
 | ADR-0008 | [US-01.03: Catalog service mirrors core, with database-only settings and a writable uv cache in dev images](0008-us-01-03-catalog-mirrors-core-with-minimal-settings.md) | Proposed | 2026-10-16 | — | — |
 | ADR-0009 | [US-01.04: Quality gates as identical tool configuration plus stdlib repository scripts](0009-us-01-04-quality-gates-as-tool-config-and-stdlib-scripts.md) | Proposed | 2026-10-16 | — | — |
 | ADR-0010 | [US-01.05: Frontend scaffold with pnpm-enforced exact pins, a stdlib pin check and a least-privilege nginx image](0010-us-01-05-frontend-scaffold-pnpm-settings-and-nginx-image.md) | Proposed | 2026-10-17 | — | — |
+| ADR-0011 | [US-01.06: Strict ESLint flat config loaded natively, a boundaries matrix, a no-audio lint set and committed lint fixtures](0011-us-01-06-eslint-boundaries-no-audio-lint-and-committed-fixtures.md) | Proposed | 2026-10-17 | — | — |
 
 ## Status legend
 
