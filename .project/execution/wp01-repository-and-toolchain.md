@@ -48,7 +48,7 @@ Renovate configuration, `.env.example`, `.gitignore`, `.editorconfig`.
 | ----- | ----------- | ----------------- | ------------------- | ------- |
 | D01.1 | Python services | `services/core` and `services/catalog` as independent uv projects (own `pyproject.toml` + `uv.lock`) in `src/` layout; ruff, mypy strict, pytest, import-linter configured identically per service and passing | `uv sync --frozen`, `ruff check`, `ruff format --check`, `mypy`, `pytest`, `lint-imports` exit 0 inside each service container | US-01.01 – US-01.04 |
 | D01.2 | Frontend skeleton | Vue + Vite + TS app with the folder layout of FRONTEND.md §1, strict tsconfig, ESLint flat config incl. boundaries, Prettier, Vitest | `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build` exit 0; boundaries rule violation demo test fails as expected | US-01.05 – US-01.07 |
-| D01.3 | Repository hygiene | Editor/ignore files, pre-commit hooks, `no-latest` check, Renovate, `.env.example` | Pre-commit runs all hooks; `no-latest` script fails on a fixture containing `:latest`; Renovate config validates | US-01.08 – US-01.10 |
+| D01.3 | Repository hygiene | Editor/ignore files, pre-commit hooks, `no-latest` check, Renovate, `.env.example` and its `scripts/check_env_example.py` check | Pre-commit runs all hooks; `no-latest` script fails on a fixture containing `:latest`; `check_env_example.py` exits 0 on the repository and fails on its fixtures; Renovate config validates | US-01.08 – US-01.10 |
 
 ## 4. User stories
 
@@ -242,8 +242,14 @@ Renovate configuration, `.env.example`, `.gitignore`, `.editorconfig`.
     The `no-latest` part is verified by the stand-in test
     `test_the_repository_env_example_never_names_a_floating_tag` (no `latest` in the file); it is
     re-verified by the real check in US-01.09, which scans `.env.example`.
-- **Tasks:** write the three files.
-- **Tests:** `no-latest` check (US-01.09) covers `.env.example`.
+- **Tasks:**
+  - [x] Write `.editorconfig`, `.gitignore` and `.env.example`.
+  - [x] `scripts/check_env_example.py` (stdlib only, `python -I`): `.env.example` lists every
+    variable the services' `Settings` and the compose files read, in the right form, each
+    commented, and nothing else.
+- **Tests:** `scripts/tests/test_check_env_example.py` (the repository passes; fixtures for each
+  failure) and the stand-in `no-latest` test; the `no-latest` check (US-01.09) covers
+  `.env.example`.
 - **Done when:** files merged.
 
 #### US-01.09 — `no-latest` check
