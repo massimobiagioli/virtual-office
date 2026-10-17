@@ -239,6 +239,9 @@ Renovate configuration, `.env.example`, `.gitignore`, `.editorconfig`.
   - [x] AC2 — `.gitignore` ignores `.env`, build outputs, caches, `node_modules`, `.venv`.
   - [x] AC3 — `.env.example` lists every `VO_*` variable known so far, each with a comment, no real
     secrets, and passes the `no-latest` check.
+    The `no-latest` part is verified by the stand-in test
+    `test_the_repository_env_example_never_names_a_floating_tag` (no `latest` in the file); it is
+    re-verified by the real check in US-01.09, which scans `.env.example`.
 - **Tasks:** write the three files.
 - **Tests:** `no-latest` check (US-01.09) covers `.env.example`.
 - **Done when:** files merged.
@@ -257,7 +260,8 @@ Renovate configuration, `.env.example`, `.gitignore`, `.editorconfig`.
   - [ ] AC3 — Given Markdown files in `.docs/` and `.project/`, when the check runs, then they are
     excluded.
 - **Tasks:** implement `scripts/check_no_latest.py` (stdlib only, run with `python -I`);
-  fixtures in `scripts/fixtures/no_latest/{good,bad}`; test file.
+  fixtures in `scripts/fixtures/no_latest/{good,bad}`; test file; a test runs the check on the
+  real repository, `.env.example` included (it replaces the US-01.08 stand-in test).
 - **Tests:** pytest over the fixtures.
 - **Done when:** script and tests merged; hooked in pre-commit (US-01.10) and CI (WP03).
 
