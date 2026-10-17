@@ -68,8 +68,10 @@ const audioElementCreation = [
   `CallExpression[callee.property.name=/^createElement(NS)?$/] > TemplateLiteral.arguments[expressions.length=0][quasis.0.value.raw=${mediaTag}]`,
 ].map((selector) => ({ selector, message: noSound }))
 const soundingVideo = {
-  // A <video> is allowed only with the static `muted` attribute.
-  selector: "VElement[name='video']:not(:has(VAttribute[directive=false][key.name='muted']))",
+  // A <video> is allowed only with its own static `muted` attribute (a muted child such as
+  // <source muted> does not count): the start tag holds only the element's own attributes.
+  selector:
+    "VElement[name='video'] > VStartTag:not(:has(VAttribute[directive=false][key.name='muted']))",
   message: noSound,
 }
 const pixiImports = {

@@ -3,4 +3,7 @@
   <audio src="beep.wav" />
   <video src="clip.mp4" />
   <video src="clip.mp4" :muted="false" />
+  <video>
+    <source src="clip.mp4" muted />
+  </video>
 </template>
