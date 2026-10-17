@@ -1,22 +1,17 @@
 import {
-  createMemoryHistory,
   createRouter,
   createWebHistory,
   type Router,
+  type RouterHistory,
   type RouteRecordRaw,
 } from 'vue-router'
 
+import WorkbenchDesktop from './windows/WorkbenchDesktop.vue'
+
 // Deep links only open windows (FRONTEND.md §6); window routes arrive with their windows.
-// The root route is the bare Workbench screen, so its view renders nothing.
-const routes: RouteRecordRaw[] = [
-  { path: '/', name: 'workbench', component: { name: 'WorkbenchDesktop', render: () => null } },
-]
+// The root route is the bare Workbench screen.
+const routes: RouteRecordRaw[] = [{ path: '/', name: 'workbench', component: WorkbenchDesktop }]
 
-export type WorkbenchHistory = 'web' | 'memory'
-
-export function createWorkbenchRouter(history: WorkbenchHistory = 'web'): Router {
-  return createRouter({
-    history: history === 'web' ? createWebHistory() : createMemoryHistory(),
-    routes,
-  })
+export function createWorkbenchRouter(history: RouterHistory = createWebHistory()): Router {
+  return createRouter({ history, routes })
 }
