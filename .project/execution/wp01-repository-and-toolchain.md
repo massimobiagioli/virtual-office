@@ -168,9 +168,9 @@ Renovate configuration, `.env.example`, `.gitignore`, `.editorconfig`.
 - **Story:** As a frontend developer, I want a Vue + Vite + TS app with the layout of
   FRONTEND.md §1, so that UI work can start without setup decisions.
 - **Acceptance criteria:**
-  - [ ] AC1 — Given `frontend/`, when listed, then `src/` contains `api/`, `stores/`, `composables/`,
+  - [x] AC1 — Given `frontend/`, when listed, then `src/` contains `api/`, `stores/`, `composables/`,
     `ui-amiga/`, `windows/`, `office-engine/`, `office-renderer/`, `assets/`, `shared/`.
-  - [ ] AC2 — Given `package.json`, when inspected, then every dependency uses an exact version from
+  - [x] AC2 — Given `package.json`, when inspected, then every dependency uses an exact version from
     STACK.md, `packageManager` pins pnpm, and `.npmrc` has `save-exact=true` and
     `engine-strict=true`.
   - [ ] AC3 — Given `pnpm build`, when run in the build container, then a `dist/` with hashed assets is
