@@ -20,7 +20,7 @@
     "typecheck": "vue-tsc --build",
     "test": "vitest run",
     "test:watch": "vitest --coverage.enabled=false",
-    "coverage": "vitest run --coverage.reporter=text --coverage.reporter=json-summary --coverage.reporter=html",
+    "coverage": "vitest run",
     "check:tooling": "node tooling-fixtures/check-tooling.ts"
   },
   "dependencies": {

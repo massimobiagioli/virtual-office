@@ -28,8 +28,10 @@ export default mergeConfig(
         // covered by `App.spec.ts`. Specs and declaration files are not source.
         exclude: ['src/**/*.spec.ts', 'src/**/*.d.ts', 'src/main.ts'],
         // `text` prints the table; `json-summary` writes `coverage-summary.json`, which
-        // `pnpm check:tooling` reads (WP03 adds the cobertura XML for CI artifacts).
-        reporter: ['text', 'json-summary'],
+        // `pnpm check:tooling` reads; `html` writes the browsable report (WP03 adds the
+        // cobertura XML for CI artifacts). The list lives only here: a CLI `--coverage.reporter`
+        // would replace it, so no script overrides it.
+        reporter: ['text', 'json-summary', 'html'],
         reportsDirectory: 'coverage',
         thresholds: {
           lines: 70,

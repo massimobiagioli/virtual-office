@@ -285,8 +285,8 @@ Follow skill `building-office-scene` and STACK.md §4. Code rules:
 - Test names describe behavior: `it('rejects a drop into DONE from TODO')`.
 - No snapshot tests of HTML markup (brittle); visual tests cover appearance.
 - Scripts: `pnpm test` (`vitest run`: the gate, prints the coverage table), `pnpm test:watch`
-  (watch mode with `--coverage.enabled=false`, for the TDD loop), `pnpm coverage` (as
-  `pnpm test`, plus an HTML report in `coverage/`).
+  (watch mode with `--coverage.enabled=false`, for the TDD loop), `pnpm coverage` (the same
+  run under its familiar name; every run writes the reports to `coverage/`).
 - `vitest.config.ts`: `src/**/*.spec.ts` and the root `vitest.*.spec.ts` (test helpers) in
   jsdom; v8 coverage with `enabled: true`, so every `vitest run` measures it and enforces the
   thresholds; coverage over `src/**/*.{ts,vue}`, so a
@@ -294,8 +294,10 @@ Follow skill `building-office-scene` and STACK.md §4. Code rules:
   what it wires is covered by `App.spec.ts`) are excluded. Global thresholds are 70 % for lines,
   functions, statements and branches (Constitution §18.2 "others"); a stricter per-folder
   threshold (e.g. `office-engine`) is added in the same change as the code it covers.
-- Reporters: `text` (the table) and `json-summary` (`coverage/coverage-summary.json`, read by
-  `pnpm check:tooling`); WP03 adds the cobertura XML reporter for the CI coverage artifact.
+- Reporters: `text` (the table), `json-summary` (`coverage/coverage-summary.json`, read by
+  `pnpm check:tooling`) and `html` (`coverage/index.html`); WP03 adds the cobertura XML
+  reporter for the CI coverage artifact. They are set only in `vitest.config.ts`: a CLI
+  `--coverage.reporter` replaces the whole list, so no script passes one.
 - Import `describe`, `it`, `expect` from `vitest` explicitly (no globals). Property tests use
   `fast-check` (`fc.assert(fc.property(…))`) and are deterministic: `vitest.setup.ts` applies
   `propertySeed(FC_SEED)` of `vitest.seed.ts` with `fc.configureGlobal` (the fixed default seed
