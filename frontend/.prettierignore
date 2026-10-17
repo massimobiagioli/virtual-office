@@ -1,0 +1,4 @@
+# Generated or tool-owned files (Prettier also reads .gitignore).
+pnpm-lock.yaml
+dist/
+coverage/
