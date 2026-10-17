@@ -460,53 +460,76 @@ Run in the `frontend/Dockerfile` `dev` target (pinned `node:24.22.0-trixie-slim`
 
 **Findings**
 
-- [ ] **R1 · Major** — commit `ac7c8d2` — subject `feat(frontend): render the My Workbench
+- [x] **R1 · Major** — commit `ac7c8d2` — subject `feat(frontend): render the My Workbench
   placeholder with Pinia and router` is 73 characters, over the 72 limit (AGENTS.md rule 16).
   Suggested fix: reword on the feature branch, e.g. `feat(frontend): render My Workbench
   placeholder with Pinia and router` (69).
-- [ ] **R2 · Minor** — `frontend/src/router.ts:12` — the root route uses an inline
+  → Resolved in 0e8e06a: branch history rewritten (local, never pushed); subject now 69 chars, body and trailers kept, tree unchanged.
+- [x] **R2 · Minor** — `frontend/src/router.ts:12` — the root route uses an inline
   `{ name, render: () => null }` component object, against FRONTEND.md §3 rule 1
   (`<script setup lang="ts">` SFCs only); `frontend/src/App.vue:3-7` has no `<RouterView/>`,
   so routes never render. Suggested fix: add `src/windows/WorkbenchDesktop.vue` (empty
   `<script setup lang="ts">`), point the route at it and render `<RouterView/>` in `App.vue`.
-- [ ] **R3 · Minor** — `frontend/Dockerfile:33-35` — nginx config and `dist` are
+  → Resolved in 7530c13: `src/windows/WorkbenchDesktop.vue` SFC rendered through `<RouterView/>`; `App.spec.ts` asserts it.
+- [x] **R3 · Minor** — `frontend/Dockerfile:33-35` — nginx config and `dist` are
   `--chown=10001:10001`, so the runtime can rewrite its own config and web root (DOCKER.md
   §4.1 least privilege). Suggested fix: copy them root-owned (0644), keep the chown on
   `/var/cache/nginx` only; update the DOCKER.md §4.3 snippet.
-- [ ] **R4 · Minor** — `frontend/nginx.conf:38` — `/ws` does not forward `X-Forwarded-For` /
+  → Resolved in f069ce3: nginx config and `dist` copied root-owned (0644); UID 10001 gets "Permission denied" writing them; DOCKER.md §4.3 synced in 014494c.
+- [x] **R4 · Minor** — `frontend/nginx.conf:38` — `/ws` does not forward `X-Forwarded-For` /
   `X-Forwarded-Proto` while `/api/` does (`:34-35`); core trusts proxy headers. Suggested fix:
   add the same two `proxy_set_header` lines to `/ws`.
-- [ ] **R5 · Minor** — `frontend/Dockerfile:41-43` — `COPY . ./` then `chown -R /app` duplicates
+  → Resolved in 86fdf5a: `/ws` forwards `X-Forwarded-For` and `X-Forwarded-Proto`.
+- [x] **R5 · Minor** — `frontend/Dockerfile:41-43` — `COPY . ./` then `chown -R /app` duplicates
   the tree (including `node_modules`) in a second layer (DOCKER.md §4.1: `COPY --chown`).
   Suggested fix: create the user first and use `COPY --chown=10001:10001`.
-- [ ] **R6 · Minor** — `frontend/Dockerfile:42` — the dev user has `--no-create-home`, so `HOME`
+  → Resolved in f069ce3: user created in `base`, `COPY --chown=10001:10001` plus a non-recursive chown of `/app` and `/app/node_modules`; the layers are 68.9 kB and 0 B.
+- [x] **R6 · Minor** — `frontend/Dockerfile:42` — the dev user has `--no-create-home`, so `HOME`
   points to a missing directory where pnpm/corepack write cache and state (same class of issue
   as ADR-0008 `UV_CACHE_DIR`). Suggested fix: `ENV HOME=/tmp` (or `XDG_*` to `/tmp`) and
   confirm `pnpm typecheck && pnpm test && pnpm build` as UID 10001.
-- [ ] **R7 · Minor** — `.docs/STACK.md:30` — §1 rule 4 still says only `save-exact=true` in
+  → Resolved in f069ce3: `ENV HOME=/tmp` in `dev`; `pnpm typecheck && pnpm test && pnpm build` pass as UID 10001.
+- [x] **R7 · Minor** — `.docs/STACK.md:30` — §1 rule 4 still says only `save-exact=true` in
   `.npmrc`; pnpm 12 ignores it and the branch enforces `saveExact`/`engineStrict` in
   `frontend/pnpm-workspace.yaml`. STACK.md outranks FRONTEND.md. Suggested fix: add the
   `pnpm-workspace.yaml` settings to STACK.md §1.4.
-- [ ] **R8 · Minor** — `.docs/FRONTEND.md:28` — layout says `App.vue # <WorkbenchScreen/>`
+  → Resolved in 014494c: STACK.md §1.4 names the `pnpm-workspace.yaml` `saveExact`/`engineStrict` settings.
+- [x] **R8 · Minor** — `.docs/FRONTEND.md:28` — layout says `App.vue # <WorkbenchScreen/>`
   while the code renders a placeholder `<h1>`. Suggested fix: note "(placeholder until WP08)"
   or record the gap in the story ADR.
-- [ ] **R9 · Minor** — `frontend/package.json:8-33` — AC2 pins are checked only by inspection;
+  → Resolved in 014494c: FRONTEND.md layout marks `App.vue` as a placeholder until WP08.
+- [x] **R9 · Minor** — `frontend/package.json:8-33` — AC2 pins are checked only by inspection;
   no automated check fails on a `^` range or drift from STACK.md §3 (`scripts/check_python_pins.py`
   covers Python only). Suggested fix: extend the pin check to `frontend/package.json`, or record
   the deferral to US-01.09/US-01.10 in the story ADR.
-- [ ] **R10 · Minor** — `frontend/Dockerfile:22-37`, `docker-compose.yml` — AC3/AC4 verified by
+  → Resolved in 3ee2048: `scripts/check_frontend_pins.py` (stdlib, `python -I`) with 9 tests; exits 0 on the repository.
+- [x] **R10 · Minor** — `frontend/Dockerfile:22-37`, `docker-compose.yml` — AC3/AC4 verified by
   hand only. Suggested fix: state in the story ADR that WP02/WP03 smoke and healthchecks
   automate them.
-- [ ] **R11 · Nit** — `frontend/Dockerfile:6` — no `base` stage (DOCKER.md §4.1 lists
+  → Resolved at close: the story ADR records that AC3/AC4 are verified by hand and WP02 (healthchecks) / WP03 (CI smoke) automate them.
+- [x] **R11 · Nit** — `frontend/Dockerfile:6` — no `base` stage (DOCKER.md §4.1 lists
   `base → deps → build → runtime`). Suggested fix: add it, or document the Node exception.
-- [ ] **R12 · Nit** — `frontend/nginx.conf:38` — prefix `location /ws` also matches `/wsfoo`.
+  → Resolved in f069ce3: `base` stage added (user, WORKDIR, corepack).
+- [x] **R12 · Nit** — `frontend/nginx.conf:38` — prefix `location /ws` also matches `/wsfoo`.
   Suggested fix: `location = /ws` (and DOCKER.md §4.3).
-- [ ] **R13 · Nit** — no favicon; `/favicon.ico` falls through to `index.html` with 200 HTML.
+  → Resolved in 86fdf5a: `location = /ws`; `/wsfoo` now gets the SPA fallback; DOCKER.md §4.3 synced in 014494c.
+- [x] **R13 · Nit** — no favicon; `/favicon.ico` falls through to `index.html` with 200 HTML.
   Suggested fix: placeholder favicon in `public/`, or `location = /favicon.ico { return 404; }`.
-- [ ] **R14 · Nit** — `frontend/src/router.ts:15` — the `'web' | 'memory'` switch is a test seam
+  → Resolved in 86fdf5a: `location = /favicon.ico` returns 404 until WP12 assets add a favicon in `public/`.
+- [x] **R14 · Nit** — `frontend/src/router.ts:15` — the `'web' | 'memory'` switch is a test seam
   in the production API. Suggested fix: inject `history: RouterHistory = createWebHistory()`.
-- [ ] **R15 · Nit** — `frontend/src/App.vue:4-5` — placeholder uses browser defaults, no
+  → Resolved in 7530c13: `createWorkbenchRouter(history: RouterHistory = createWebHistory())`; specs inject `createMemoryHistory()`.
+- [x] **R15 · Nit** — `frontend/src/App.vue:4-5` — placeholder uses browser defaults, no
   DESIGN.md tokens; acceptable until WP07 tokens exist. Suggested fix: say so in the story ADR.
+  → Resolved at close: `App.vue` comment says browser defaults until WP07 tokens (7530c13); the story ADR records it.
+
+**Rework:** 2026-10-17 · head 3ee2048 · gates: frontend `dev` image as UID 10001 `pnpm typecheck`,
+`pnpm test` (2 files, 3 tests), `pnpm build` pass; `docker compose config -q` pass; `make up` +
+smoke (200 on `/` and deep link, `/healthz`, `/favicon.ico` 404, `/ws` reaches core, `/wsfoo` SPA
+fallback, immutable assets, security headers, root-owned nginx files, UID 10001) pass, `make down`;
+`pytest scripts/tests` 31 passed, scripts ruff, ruff format, mypy strict pass,
+`check_frontend_pins.py` and `check_python_pins.py` exit 0; all subjects ≤ 72 chars.
+ESLint/Prettier, frontend coverage, `no-latest`, Playwright: not available.
 
 **Notes**
 
