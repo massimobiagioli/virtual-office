@@ -138,6 +138,7 @@ Slash commands that run the story workflow end to end. They are user-invoked onl
 | [`/feature-rework [R1 …]`](.claude/commands/feature-rework.md) | Fixes the open review findings test-first and marks them resolved |
 | [`/feature-close`](.claude/commands/feature-close.md) | Runs the quality gate, writes the story ADR (and WP closing ADR), ticks the story, updates the WP status, opens the PR |
 | [`/feature-auto [US-NN.MM]`](.claude/commands/feature-auto.md) | Runs impl → review → rework → close and merges the PR |
+| [`/bugfix <description>`](.claude/commands/bugfix.md) | Fixes a non-story bug on `fix/<slug>` test-first, reviews, reworks, runs the gate, opens the PR and merges it |
 
 ## Skills index (`.agents/skills/`)
 
