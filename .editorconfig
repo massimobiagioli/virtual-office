@@ -1,0 +1,29 @@
+# Virtual Office editor settings (https://editorconfig.org). Formatters own the details
+# (ruff format for Python, Prettier for the frontend); this file keeps every editor in line.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+# TypeScript, Vue, JavaScript, JSON, YAML, Markdown, HTML, CSS and nginx configuration.
+indent_size = 2
+
+[*.{py,pyi,toml}]
+# Python (PEP 8, ruff format) and TOML (pyproject.toml, uv.lock).
+indent_size = 4
+
+[*.md]
+# Trailing spaces can be meaningful in Markdown (hard line breaks, rulers in code blocks).
+trim_trailing_whitespace = false
+
+[Dockerfile]
+# Continuation lines of RUN, LABEL and ENTRYPOINT (DOCKER.md §4).
+indent_size = 4
+
+[Makefile]
+# Make requires tabs in recipes.
+indent_style = tab
+indent_size = 8
