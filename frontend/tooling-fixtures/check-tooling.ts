@@ -179,7 +179,10 @@ function checkCompilerOptions(
   return [...errors, ...mismatches]
 }
 
-function describe(result: ESLint.LintResult, message: ESLint.LintResult['messages'][number]) {
+function formatMessage(
+  result: ESLint.LintResult,
+  message: ESLint.LintResult['messages'][number],
+): string {
   return `${result.filePath}:${String(message.line)}: ${message.ruleId ?? 'fatal'}: ${message.message}`
 }
 
@@ -196,9 +199,9 @@ async function checkLintFixtures(cwd: string): Promise<string[]> {
   for (const result of results) {
     for (const message of result.messages) {
       if (message.fatal === true) {
-        failures.push(`fatal: ${describe(result, message)}`)
+        failures.push(`fatal: ${formatMessage(result, message)}`)
       } else if (clean.has(result.filePath)) {
-        failures.push(`positive fixture must lint clean: ${describe(result, message)}`)
+        failures.push(`positive fixture must lint clean: ${formatMessage(result, message)}`)
       }
     }
   }
