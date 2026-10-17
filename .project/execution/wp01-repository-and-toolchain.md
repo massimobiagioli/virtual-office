@@ -20,7 +20,7 @@ acceptance criteria and tasks are checked, merged, and its ADR is written.
 - [x] US-01.02 — Scaffold the `core` service package (3 pts) · ADR: ADR-0006
 - [x] US-01.03 — Scaffold the `catalog` service package (2 pts) · ADR: ADR-0008
 - [x] US-01.04 — Configure quality tools and architecture contracts (3 pts) · ADR: ADR-0009
-- [ ] US-01.05 — Scaffold the Vue + Vite application (3 pts)
+- [x] US-01.05 — Scaffold the Vue + Vite application (3 pts) · ADR: ADR-0010
 - [ ] US-01.06 — Strict TypeScript and lint configuration (3 pts)
 - [ ] US-01.07 — Vitest setup with coverage (2 pts)
 - [ ] US-01.08 — Editor, ignore and environment files (2 pts)
@@ -164,7 +164,7 @@ Renovate configuration, `.env.example`, `.gitignore`, `.editorconfig`.
 
 #### US-01.05 — Scaffold the Vue + Vite application
 
-- [ ] **US-01.05 completed** · **Points:** 3 · **Priority:** Must · **ADR:** —
+- [x] **US-01.05 completed** · **Points:** 3 · **Priority:** Must · **ADR:** ADR-0010
 - **Story:** As a frontend developer, I want a Vue + Vite + TS app with the layout of
   FRONTEND.md §1, so that UI work can start without setup decisions.
 - **Acceptance criteria:**

@@ -503,10 +503,10 @@ Run in the `frontend/Dockerfile` `dev` target (pinned `node:24.22.0-trixie-slim`
   covers Python only). Suggested fix: extend the pin check to `frontend/package.json`, or record
   the deferral to US-01.09/US-01.10 in the story ADR.
   → Resolved in 3ee2048: `scripts/check_frontend_pins.py` (stdlib, `python -I`) with 9 tests; exits 0 on the repository.
-- [ ] **R10 · Minor** — `frontend/Dockerfile:22-37`, `docker-compose.yml` — AC3/AC4 verified by
+- [x] **R10 · Minor** — `frontend/Dockerfile:22-37`, `docker-compose.yml` — AC3/AC4 verified by
   hand only. Suggested fix: state in the story ADR that WP02/WP03 smoke and healthchecks
   automate them.
-  → Deferred to /feature-close (story ADR): record that AC3/AC4 are verified by hand and WP02 (healthchecks) / WP03 (CI smoke) automate them.
+  → Resolved at close in ADR-0010 (Decision 12): AC3/AC4 verified by hand (`pnpm build` in the dev image, `make up` + curl smoke); WP02 healthchecks and WP03 CI smoke automate them.
 - [x] **R11 · Nit** — `frontend/Dockerfile:6` — no `base` stage (DOCKER.md §4.1 lists
   `base → deps → build → runtime`). Suggested fix: add it, or document the Node exception.
   → Resolved in f069ce3: `base` stage added (user, WORKDIR, corepack).
@@ -519,9 +519,9 @@ Run in the `frontend/Dockerfile` `dev` target (pinned `node:24.22.0-trixie-slim`
 - [x] **R14 · Nit** — `frontend/src/router.ts:15` — the `'web' | 'memory'` switch is a test seam
   in the production API. Suggested fix: inject `history: RouterHistory = createWebHistory()`.
   → Resolved in 7530c13: `createWorkbenchRouter(history: RouterHistory = createWebHistory())`; specs inject `createMemoryHistory()`.
-- [ ] **R15 · Nit** — `frontend/src/App.vue:4-5` — placeholder uses browser defaults, no
+- [x] **R15 · Nit** — `frontend/src/App.vue:4-5` — placeholder uses browser defaults, no
   DESIGN.md tokens; acceptable until WP07 tokens exist. Suggested fix: say so in the story ADR.
-  → Deferred to /feature-close (story ADR): `App.vue` comment says browser defaults until WP07 tokens (7530c13); the ADR must record it.
+  → Resolved at close in ADR-0010 (Decision 6): the placeholder `App.vue` uses browser defaults, no DESIGN.md tokens, until the WP07 tokens exist (comment added in 7530c13).
 
 **Rework:** 2026-10-17 · head 3ee2048 · gates: frontend `dev` image as UID 10001 `pnpm typecheck`,
 `pnpm test` (2 files, 3 tests), `pnpm build` pass; `docker compose config -q` pass; `make up` +
