@@ -155,8 +155,10 @@ TypeScript + Vue 3 + Vite, SPA, Composition API with `<script setup lang="ts">` 
 | Lint (TS)              | typescript-eslint         | 8.71.2   | |
 | Lint (Vue + TS preset) | @vue/eslint-config-typescript | 14.9.0 | |
 | Module boundaries      | eslint-plugin-boundaries  | 7.2.0    | FRONTEND.md §1.1 |
+| Lint (Prettier compat) | eslint-config-prettier    | 10.1.8   | Turns off the stylistic rules Prettier owns (FRONTEND.md §11) |
 | Accessibility checks   | @axe-core/playwright      | 4.14.0   | Zero violations per window |
 | Format                 | prettier                  | 3.9.10   | |
+| Node.js types          | @types/node               | 24.19.2  | Types of the build-time Node.js runtime for config files and tooling scripts; major follows Node.js (hold, see §9) |
 
 **No UI component library.** The Amiga Workbench look (windows, gadgets, requesters, menus,
 icons) is a hand-built Vue component kit in `frontend/src/ui-amiga/` (Constitution §14.4).
@@ -356,6 +358,7 @@ the role eval sets whenever a model tag changes.
 | ----------- | -------- | ------ | ---------------------------------------------------------------------- | -------- |
 | TypeScript  | 7.0.2    | 6.0.3  | `typescript-eslint` 8.71.2 declares peer `typescript >=4.8.4 <6.1.0`   | Every Renovate run; lift as soon as typescript-eslint supports 7.x |
 | Node.js     | 26.12.0 (Current) | 24.22.0 (LTS) | Policy: runtimes use the latest **LTS** line, "Current" lines are not stable for builds | When 26 enters LTS |
+| @types/node | 26.6.5   | 24.19.2 | Types must describe the pinned Node.js 24 runtime, not APIs it lacks | With the Node.js hold |
 
 ---
 

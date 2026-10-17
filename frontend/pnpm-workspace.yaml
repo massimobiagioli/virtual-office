@@ -3,3 +3,8 @@
 # tools, this file makes pnpm enforce it (STACK.md §1.4).
 saveExact: true
 engineStrict: true
+# Written by `pnpm add` in US-01.06: eslint 10.13.0 (STACK.md §3, published 2026-10-16) was
+# younger than pnpm's default minimum release age, so this exact version is exempt. Drop the
+# entry at the next eslint update.
+minimumReleaseAgeExclude:
+  - eslint@10.13.0
