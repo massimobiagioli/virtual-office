@@ -295,7 +295,9 @@ Follow skill `building-office-scene` and STACK.md §4. Code rules:
   `no-restricted-exports` on default exports in `*.ts` except `*.config.ts` (§2 rule 5),
   `no-restricted-imports` for `pixi.js`/`@pixi/*` outside `office-renderer`, and the no-audio
   rules of §8.6, all with the Constitution §14.10 message:
-  - `no-restricted-imports`: `@pixi/sound`, `howler`, `tone` and their subpaths, everywhere
+  - `no-restricted-imports`: `@pixi/sound`, `howler`, `tone` and their subpaths, and audio
+    files (`.aac`, `.aif`, `.aiff`, `.flac`, `.m4a`, `.mid`, `.midi`, `.mp3`, `.oga`, `.ogg`,
+    `.opus`, `.wav`, `.weba`, any letter case, with or without a Vite `?query`), everywhere
     (`office-renderer` included);
   - `no-restricted-globals`: `Audio`, `AudioContext`, `OfflineAudioContext`,
     `webkitAudioContext`, `HTMLAudioElement`, `speechSynthesis`, `SpeechSynthesisUtterance`;

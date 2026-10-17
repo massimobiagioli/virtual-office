@@ -78,19 +78,19 @@ const lintExpectations: readonly LintExpectation[] = [
   ),
   { file: fixture('api/imports-pinia.ts'), ruleId: 'boundaries/dependencies', line: 2 },
   // No audio, ever (Constitution §14.10): one line per banned name.
-  ...[3, 4, 5, 6].map((line) => ({
+  ...[3, 4, 5, 6, 7, 8].map((line) => ({
     file: fixture('shared/uses-audio.ts'),
     ruleId: 'no-restricted-imports',
     line,
     messageIncludes: noSound,
   })),
-  ...[9, 10, 11, 12, 13, 14, 15].map((line) => ({
+  ...[12, 13, 14, 15, 16, 17, 18].map((line) => ({
     file: fixture('shared/uses-audio.ts'),
     ruleId: 'no-restricted-globals',
     line,
     messageIncludes: noSound,
   })),
-  ...[16, 17, 18].map((line) => ({
+  ...[19, 20, 21].map((line) => ({
     file: fixture('shared/uses-audio.ts'),
     ruleId: 'no-restricted-properties',
     line,
@@ -99,15 +99,15 @@ const lintExpectations: readonly LintExpectation[] = [
   {
     file: fixture('shared/uses-audio.ts'),
     ruleId: 'no-restricted-syntax',
-    line: 19,
+    line: 22,
     messageIncludes: noSound,
   },
-  {
+  ...[2, 3].map((line) => ({
     file: fixture('office-renderer/imports-sound.ts'),
     ruleId: 'no-restricted-imports',
-    line: 2,
+    line,
     messageIncludes: noSound,
-  },
+  })),
   {
     file: fixture('windows/AudioWindow.vue'),
     ruleId: 'vue/no-restricted-html-elements',

@@ -4,8 +4,11 @@ import { sound } from '@pixi/sound'
 import { filters } from '@pixi/sound/filters'
 import { Howl } from 'howler'
 import * as Tone from 'tone'
+import beep from '../assets/beep.mp3'
+import chime from './chime.OGG?url'
 
 export const libraries = [sound, filters, Howl, Tone]
+export const files = [beep, chime]
 export const element = new Audio('beep.wav')
 export const context = new AudioContext()
 export const offline = new OfflineAudioContext(1, 1, 44100)
