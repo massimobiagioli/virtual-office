@@ -59,10 +59,14 @@ const audioFileImports = {
   caseSensitive: false,
   message: noSound,
 }
-const audioElementCreation = {
-  selector: "CallExpression[callee.property.name='createElement'][arguments.0.value=/^audio$/i]",
-  message: noSound,
-}
+// Creating an <audio> or <video> element from script, with a string or a static template
+// literal tag name; a muted <video> belongs in a template. Computed tag names are not caught.
+const mediaTag = '/^(audio|video)$/i'
+const audioElementCreation = [
+  `CallExpression[callee.property.name='createElement'][arguments.0.value=${mediaTag}]`,
+  `CallExpression[callee.property.name='createElementNS'][arguments.1.value=${mediaTag}]`,
+  `CallExpression[callee.property.name=/^createElement(NS)?$/] > TemplateLiteral.arguments[expressions.length=0][quasis.0.value.raw=${mediaTag}]`,
+].map((selector) => ({ selector, message: noSound }))
 const soundingVideo = {
   // A <video> is allowed only with the static `muted` attribute.
   selector: "VElement[name='video']:not(:has(VAttribute[directive=false][key.name='muted']))",
@@ -90,7 +94,7 @@ export default withVueTs(
       '@typescript-eslint/consistent-type-imports': 'error',
       'no-restricted-globals': ['error', ...audioGlobals],
       'no-restricted-properties': ['error', ...audioProperties],
-      'no-restricted-syntax': ['error', audioElementCreation],
+      'no-restricted-syntax': ['error', ...audioElementCreation],
       'vue/no-restricted-html-elements': ['error', { element: ['audio'], message: noSound }],
       'vue/no-restricted-syntax': ['error', soundingVideo],
       'no-restricted-imports': [
