@@ -23,6 +23,8 @@
     "vite.config.ts",
     "vitest.config.ts",
     "vitest.setup.ts",
+    "vitest.seed.ts",
+    "vitest.seed.spec.ts",
     "eslint.config.ts",
     "tooling-fixtures/*.ts"
   ]
