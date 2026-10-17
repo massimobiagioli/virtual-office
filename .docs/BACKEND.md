@@ -237,7 +237,8 @@ class Settings(BaseSettings):
 ```
 
 - Twelve-factor: **environment only**. No `.env` file is read in production images; compose
-  injects variables. Every variable is documented in `.env.example`.
+  injects variables. Every variable is documented in `.env.example`; a new `Settings` field
+  without its entry fails `scripts/check_env_example.py` (§11.1).
 - Prefix `VO_` for application variables, applied through the validation alias so that a
   missing or invalid variable is reported by its environment name (`VO_DATABASE_URL`);
   third-party standard names (e.g. `ANTHROPIC_API_KEY`) are read as-is.
@@ -472,6 +473,7 @@ python -I scripts/check_coverage.py services/<service>/coverage.json --package <
 python -I scripts/check_service_config_drift.py
 python -I scripts/check_python_pins.py
 python -I scripts/check_frontend_pins.py
+python -I scripts/check_env_example.py   # every Settings field and compose VO_* in .env.example
 ```
 
 `scripts/` is linted with the core rules (`scripts/ruff.toml` extends
