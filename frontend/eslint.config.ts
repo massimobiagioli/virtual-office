@@ -6,7 +6,9 @@ import pluginVue from 'eslint-plugin-vue'
 import prettierConfig from 'eslint-config-prettier'
 
 // Module boundaries of FRONTEND.md §1.1. The patterns match from the right of the path, so the
-// negative fixtures in `tooling-fixtures/src/` are classified like the real `src/` folders.
+// negative fixtures in `tooling-fixtures/src/` and the coverage fixture project in
+// `tooling-fixtures/under-covered/src/` (linted, not ignored) are classified like the real
+// `src/` folders.
 // `assets/` and the files at the root of `src/` (main.ts, App.vue, router.ts) are not modules of
 // the matrix: they stay unclassified, and imports of unclassified files are not checked.
 const elements = [

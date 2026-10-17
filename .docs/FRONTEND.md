@@ -26,7 +26,8 @@ frontend/
 ├── index.html
 ├── public/                       # favicon only; everything else is imported (hashed)
 ├── tooling-fixtures/             # check-tooling.ts; lint fixtures in src/ (§11),
-│                                 # coverage fixture project in under-covered/ (§10)
+│                                 # coverage fixture project in under-covered/ (§10), with its
+│                                 # own tsconfig referenced from tsconfig.json (pnpm typecheck)
 └── src/
     ├── main.ts                   # createApp, Pinia, router, global styles
     ├── router.ts                 # createWorkbenchRouter(): deep-link routes (§6)
