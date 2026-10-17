@@ -10,6 +10,10 @@ sets itself as a commented `# NAME=value`. A `Settings` variable that no compose
 fails in either form, because the services never read `.env` (DOCKER.md §2). A listed variable
 that nothing reads fails too: variables are added by the story that starts reading them.
 
+Limitation: compose files are read line by line, not parsed as YAML (the check is stdlib only),
+so a ` #` inside a quoted or block scalar is taken as the start of a comment and a variable
+after it on that line is missed. Keep ` #` out of compose values.
+
 Usage: python -I scripts/check_env_example.py [--root REPOSITORY_ROOT]
 """
 
