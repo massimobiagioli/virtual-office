@@ -712,3 +712,78 @@ Run in the `frontend/Dockerfile` `dev` target as UID 10001 and in the core `dev`
 - ROADMAP.md:375-376 `test:watch` and `coverage` scripts correctly left to US-01.07.
 
 **Rework:** 2026-10-17 · head 7c12cac · gates: dev image as UID 10001 `pnpm lint`, `format:check`, `typecheck`, `test` (3), `build`, `check:tooling` (32 expected errors, 11 clean positives) pass; runtime target build pass (no fixtures in web root); container mutation runs on throwaway copies: 33 config mutations with 2 survivors (redundant `@pixi/sound/*` and `windows` → `windows` entries, then removed), 7 re-run on the final config all caught, 2 tsconfig mutations caught and JSONC/`extends` variants accepted; `docker compose config -q` pass; `check_frontend_pins.py` and `pytest scripts/tests` (32) pass; coverage n/a (US-01.07), CI n/a (WP03).
+
+### Round 2 · 2026-10-17 · branch `feat/us-01-06-strict-ts-and-lint-config` · head `b395418`
+
+**Verdict:** APPROVED
+
+**Quality gate**
+
+Fresh temp images; `frontend/Dockerfile` `dev` target as UID 10001, core `dev` image for
+`scripts/`; mutations on throwaway copies inside containers.
+
+| Gate | Result |
+| ---- | ------ |
+| `pnpm lint` (`--max-warnings 0`) | pass |
+| `pnpm format:check` | pass |
+| `pnpm typecheck` | pass |
+| `pnpm test` (2 files, 3 tests) | pass |
+| `pnpm build` | pass |
+| `pnpm check:tooling` (32 expected errors, 11 clean positive fixtures) | pass |
+| `ERR_PNPM` output in any gate | 0 hits |
+| runtime target build (no fixtures in web root, UID 10001) | pass |
+| tooling check mutation test (30 mutations) | 30 caught, 0 survived |
+| `docker compose config -q` | pass |
+| `check_frontend_pins.py`, `pytest scripts/tests` (32) | pass |
+| frontend coverage thresholds | not available (US-01.07) |
+| CI | not available (WP03) |
+
+**Round 1 follow-up** — R1–R7, R10–R16 verified fixed (mutations confirm R2, R4, R6, R12, R16).
+R8 and R9 remain open, deferred to the story ADR at `/feature-close`.
+
+**Findings**
+
+- [ ] **R17 · Minor** — `.docs/STACK.md:39-40` — the release-age bullet was inserted inside the
+  npm bullet, so the `check_frontend_pins.py` sentence now reads as part of the quarantine policy.
+  Suggested fix: move lines 39-40 back to the end of the npm bullet (or their own bullet).
+- [ ] **R18 · Minor** — `.docs/STACK.md:10-11,33-38` — "Changing anything here requires a
+  repository ADR", but the new §1.4 release-age policy has none and R10 does not defer it.
+  Suggested fix: mark it "Deferred to /feature-close (story ADR)" and record it in the story ADR.
+- [ ] **R19 · Minor** — `.docs/STACK.md:37-38`, `frontend/pnpm-workspace.yaml:8-9` — the removal
+  trigger joins two conditions, so the exemption lingers as dead config until the next eslint bump.
+  Suggested fix: "removed as soon as a frozen install passes without it, and at the latest at the
+  next update of that package".
+- [ ] **R20 · Minor** — `frontend/eslint.config.ts:152` — the `office-engine` disallow list omits
+  `@vue/*` (FRONTEND.md:309-310, §1.1 "no `vue`"). Suggested fix: one shared `frameworkPackages`
+  constant for both policies.
+- [ ] **R21 · Minor** — `frontend/tooling-fixtures/src/shared/imports-vue.ts:2-4` — no fixture
+  imports a `@vue/*` package, so that entry is never proven (ADR-0009). Suggested fix: add a
+  `@vue/reactivity` line with its expectation here and in `office-engine` (after R20).
+- [ ] **R22 · Minor** — `frontend/eslint.config.ts:31-61` — importing an audio asset
+  (`*.mp3`, `*.ogg`, …) still passes lint, though FRONTEND.md:42,249 say "no audio files"
+  (Constitution §14.10). Suggested fix: an audio-extension group in `no-restricted-imports` with a
+  fixture line, or state in FRONTEND.md §11 that WP12's asset check covers it.
+- [ ] **R23 · Nit** — `frontend/eslint.config.ts:53-56` — `audioElementCreation` matches only the
+  literal `'audio'`; misses `createElement('video')`, template literals, `createElementNS`.
+  Suggested fix: extend to `/^(audio|video)$/i`, or list the limit in FRONTEND.md §8.6/§11.
+- [ ] **R24 · Nit** — `frontend/eslint.config.ts:59` — `:has(...)` matches descendants, so
+  `<source muted>` would satisfy the `<video>` rule. Suggested fix: restrict to the `VStartTag`'s
+  own attributes, or note it.
+- [ ] **R25 · Nit** — `frontend/eslint.config.ts:135-139` — the catch-all lets `office-renderer`
+  import `vue`/`pinia`/`vue-router`; FRONTEND.md §1.1 lists only PixiJS for it. Suggested fix: add
+  the framework disallow, or state in §11 that it is accepted.
+- [ ] **R26 · Nit** — `frontend/tooling-fixtures/tsconfig.json:2` — comment says "negative fixtures
+  only" but positives live there too. Suggested fix: "lint fixtures".
+- [ ] **R27 · Nit** — `frontend/tooling-fixtures/check-tooling.ts:178` — `describe` lacks an
+  explicit return type and shadows the Vitest global. Suggested fix: `formatMessage(...): string`.
+- [ ] **R28 · Nit** — `.docs/FRONTEND.md:250-251` — "Web Audio and speech globals" omits
+  `HTMLAudioElement`. Suggested fix: reword or point to §11.
+- [ ] **R29 · Nit** — `.docs/DOCKER.md:329` — the compose gate line lacks `pnpm build`, unlike
+  `:330`. Suggested fix: add it.
+- [ ] **R30 · Nit** — `.project/ROADMAP.md:444` — deliverables still list only `@pixi/sound` and
+  `Audio`/`AudioContext`. Suggested fix: update, or leave as plan text.
+
+**Notes**
+
+- Every banned audio name has its own fixture line and expectations check the §14.10 message; all
+  allowed §1.1 edges are now proven both ways.
