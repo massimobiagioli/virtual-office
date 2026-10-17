@@ -880,11 +880,11 @@ throwaway containers.
 - [x] **R7 · Minor** — `.project/ROADMAP.md:974` — WP03 `frontend-checks` still says
   `pnpm test --coverage`, now redundant. Suggested fix: `pnpm test` (coverage included).
   → Resolved in d5f7340: WP03 `frontend-checks` now says `pnpm test` (coverage included).
-- [ ] **R8 · Minor** — `.project/execution/wp01-repository-and-toolchain.md:210` — the story makes
+- [x] **R8 · Minor** — `.project/execution/wp01-repository-and-toolchain.md:210` — the story makes
   its own decisions (`main.ts` excluded, `--root` reuse of the real config, reporters, fixture
   placement, `pnpm test` always with coverage, seed policy), so it needs its own story ADR
   (AGENTS.md rule 14). Suggested fix: write ADR-0012 at `/feature-close`.
-  → Deferred to /feature-close (story ADR).
+  → Resolved in ADR-0012 (story ADR, Decisions 1–10).
 - [x] **R9 · Nit** — `frontend/tooling-fixtures/check-tooling.ts:248` — spawns the internal path
   `node_modules/vitest/vitest.mjs`. Suggested fix: resolve the bin via `createRequire` or
   `pnpm exec vitest`.
@@ -957,16 +957,16 @@ throwaway containers.
   → Resolved in 44aa90d: `vitest.seed.ts` exports `defaultPropertySeed`/`propertySeed`;
   `vitest.seed.spec.ts` asserts the global seed equals `propertySeed(FC_SEED)` and the default is
   `20261017`; `seed: Date.now()` and a changed default now fail `pnpm test` (mutation-checked).
-- [ ] **R17 · Minor** — `frontend/vitest.setup.ts:1-4,22`, `.docs/FRONTEND.md:298-300` — `FC_SEED`
+- [x] **R17 · Minor** — `frontend/vitest.setup.ts:1-4,22`, `.docs/FRONTEND.md:298-300` — `FC_SEED`
   has no `VO_` prefix and is not a third-party name (Constitution §15.11); FRONTEND.md's exception
   ranks below the Constitution (AGENTS.md rules 1–2). Suggested fix: record in the story ADR that
   §15.11 covers service runtime configuration, not test-runner knobs, or rename to `VO_FC_SEED`.
-  → Deferred to /feature-close (story ADR).
-- [ ] **R18 · Minor** — `.docs/adr/0011-…-committed-fixtures.md:41-45`, `frontend/eslint.config.ts:8-9`
+  → Resolved in ADR-0012 Decision 9: §15.11 read as covering service runtime configuration, not test-runner knobs.
+- [x] **R18 · Minor** — `.docs/adr/0011-…-committed-fixtures.md:41-45`, `frontend/eslint.config.ts:8-9`
   — ADR-0011 Decision 1 says `tooling-fixtures/` is never part of `pnpm typecheck`; `under-covered/`
   now is (linted and type-checked). Suggested fix: refine it in the story ADR; optionally extend the
   eslint comment about right-anchored patterns. → eslint comment extended in bd8b1d8; ADR
-  refinement → Deferred to /feature-close (story ADR).
+  refinement → Resolved in ADR-0012 Decision 7 (two fixture kinds in `tooling-fixtures/`).
 - [x] **R19 · Nit** — `frontend/package.json:23` — `coverage` repeats `text,json-summary` because CLI
   reporters replace the config list; a reporter added to the config later would be dropped.
   Suggested fix: move `html` into config or document "keep in sync". → Resolved in 02aead6:
