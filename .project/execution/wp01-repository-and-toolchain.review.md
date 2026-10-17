@@ -641,67 +641,67 @@ Run in the `frontend/Dockerfile` `dev` target as UID 10001 and in the core `dev`
 
 **Findings**
 
-- [ ] **R1 · Major** — `frontend/eslint.config.ts:32-39,60-61` — the no-audio lint covers only
+- [x] **R1 · Major** — `frontend/eslint.config.ts:32-39,60-61` — the no-audio lint covers only
   Web Audio globals and three libraries; Constitution §14.10 also names `<audio>`/`<video>` with
   sound, and ROADMAP.md:371 asks for "any audio API or library anywhere". Missing:
   `vue/no-restricted-html-elements` for `audio` (and `video` without `muted`), `speechSynthesis` /
   `SpeechSynthesisUtterance`, `HTMLAudioElement`, `window.Audio` / `globalThis.AudioContext`
   (`no-restricted-properties`), `document.createElement('audio')`. Suggested fix: add the rules,
-  fixtures (including an SFC with `<audio>`) and expectations, and update FRONTEND.md §8.6/§11.
-- [ ] **R2 · Major** — `frontend/tooling-fixtures/src/shared/uses-audio.ts:2`,
+  fixtures (including an SFC with `<audio>`) and expectations, and update FRONTEND.md §8.6/§11. → Resolved in 571ee84: bans `HTMLAudioElement`, `speechSynthesis`, `SpeechSynthesisUtterance` (globals and `window`/`globalThis`/`self` properties), `document.createElement('audio')`, `<audio>` and `<video>` without `muted`; fixtures `shared/uses-audio.ts`, `windows/AudioWindow.vue`; docs in 2136ae1.
+- [x] **R2 · Major** — `frontend/tooling-fixtures/src/shared/uses-audio.ts:2`,
   `frontend/eslint.config.ts:36-41,84-89` — the audio-import ban is not really tested: `@pixi/sound`
   also matches the `@pixi/*` pattern, so replacing the audio group with `['xxx']` or emptying the
   `office-renderer` override's `patterns: [audioImports]` both leave `check:tooling` green. The
   fixture also skips `howler`, `tone`, `OfflineAudioContext`, `webkitAudioContext`. Suggested fix:
   shared fixture imports `howler`/`tone`; add `tooling-fixtures/src/office-renderer/imports-sound.ts`
-  importing `@pixi/sound`; one line per banned name; optionally match the §14.10 message text.
-- [ ] **R3 · Major** — `frontend/eslint.config.ts:108-111` — catch-all `from '*' → allow external`
+  importing `@pixi/sound`; one line per banned name; optionally match the §14.10 message text. → Resolved in 571ee84: one fixture line per banned import/global, `office-renderer/imports-sound.ts`, expectations match the §14.10 message; container mutation run: emptying the audio group or the `office-renderer` override, dropping `@pixi/sound`/`howler`/`tone`/any global now fails the check (redundant `/*` entries removed).
+- [x] **R3 · Major** — `frontend/eslint.config.ts:108-111` — catch-all `from '*' → allow external`
   lets `shared` (and `api`) import `vue`, `pinia`, `vue-router`; FRONTEND.md §1 says `shared/` is
   "no Vue" and §1.1 "nothing else". Suggested fix: disallow those externals for `shared` (and
-  `api`), with a `shared/imports-vue.ts` fixture and expectation.
-- [ ] **R4 · Major** — `frontend/tooling-fixtures/check-tooling.ts:30-59` — with
+  `api`), with a `shared/imports-vue.ts` fixture and expectation. → Resolved in 571ee84: `shared` and `api` disallow `vue`, `vue-router`, `pinia`, `@vue/*`; fixtures `shared/imports-vue.ts`, `api/imports-pinia.ts`.
+- [x] **R4 · Major** — `frontend/tooling-fixtures/check-tooling.ts:30-59` — with
   `default: 'disallow'` only negative edges are proven; no fixture shows the allowed edges pass
   (renderer→engine, stores→engine `import type`, engine→api `import type`, composables→stores,
   ui-amiga→composables, intra-element). `src/` is empty, so a green `pnpm lint` proves nothing
   (ADR-0009: every rule proven). Suggested fix: positive fixtures asserted to have zero
-  `boundaries/dependencies` messages.
-- [ ] **R5 · Major** — `.docs/DOCKER.md:329-330` — gate commands not updated: line 329 lacks
+  `boundaries/dependencies` messages. → Resolved in 571ee84: 11 positive fixtures (every allowed §1.1 edge, `import type` edges, intra-element, muted `<video>`) must produce zero messages; mutation run removing any allowed edge fails the check.
+- [x] **R5 · Major** — `.docs/DOCKER.md:329-330` — gate commands not updated: line 329 lacks
   `pnpm format:check` and `pnpm check:tooling`; the interim line 330 runs only
   `typecheck && test && build`, so lint, Prettier and the negative fixtures never run in the
   documented container gate (Constitution §18.2). Suggested fix: add
-  `pnpm lint && pnpm format:check && pnpm check:tooling` to both.
-- [ ] **R6 · Minor** — `frontend/tooling-fixtures/check-tooling.ts:30-59` — no fixture covers
+  `pnpm lint && pnpm format:check && pnpm check:tooling` to both. → Resolved in 2136ae1: both DOCKER.md gate lines run `lint`, `format:check` and `check:tooling`.
+- [x] **R6 · Minor** — `frontend/tooling-fixtures/check-tooling.ts:30-59` — no fixture covers
   `no-restricted-exports` (FRONTEND.md §2 rule 5, `eslint.config.ts:64-82`). Suggested fix:
-  `tooling-fixtures/src/shared/default-export.ts` plus expectation.
-- [ ] **R7 · Minor** — `.docs/FRONTEND.md:250-251,296` — says `no-restricted-globals` covers
-  `Audio`/`AudioContext` only; config bans more. Suggested fix: list the full sets (after R1).
+  `tooling-fixtures/src/shared/default-export.ts` plus expectation. → Resolved in 571ee84: `shared/default-export.ts` fails with `no-restricted-exports`.
+- [x] **R7 · Minor** — `.docs/FRONTEND.md:250-251,296` — says `no-restricted-globals` covers
+  `Audio`/`AudioContext` only; config bans more. Suggested fix: list the full sets (after R1). → Resolved in 2136ae1: FRONTEND.md §8.6 and §11 list the full rule sets.
 - [ ] **R8 · Minor** — `frontend/eslint.config.ts:47` + `tooling-fixtures/` — ADR-0009
   Alternative 3 rejected committed, lint-excluded fixtures; the departure (typed linting needs a
   tsconfig; ignore scoped to `tooling-fixtures/src/`) is not recorded. Suggested fix: record it in
-  the story ADR.
+  the story ADR. → Deferred to /feature-close (story ADR).
 - [ ] **R9 · Minor** — `frontend/package.json:17`, `frontend/eslint.config.ts:1-2` — ESLint's
   `unstable_native_nodejs_ts_config` flag can be renamed/removed in a minor release (spirit of
   STACK.md §1.1 "stable only"). Suggested fix: record in the story ADR with rejected alternatives
-  (`jiti`, `eslint.config.js`) and a re-check trigger; optionally a STACK.md §9 watch row.
-- [ ] **R10 · Minor** — `frontend/pnpm-workspace.yaml:6-10` — `minimumReleaseAgeExclude:
+  (`jiti`, `eslint.config.js`) and a re-check trigger; optionally a STACK.md §9 watch row. → Deferred to /feature-close (story ADR).
+- [x] **R10 · Minor** — `frontend/pnpm-workspace.yaml:6-10` — `minimumReleaseAgeExclude:
   eslint@10.13.0` disables a supply-chain control and is undocumented in STACK.md §1.4; the
   quarantine expires within about a day of 2026-10-16. Suggested fix: remove it once the lock
-  resolves without it, or document a release-age policy in STACK.md §1 / the ADR.
-- [ ] **R11 · Minor** — `frontend/eslint.config.ts:135` — `ui-amiga → composables` allows every
+  resolves without it, or document a release-age policy in STACK.md §1 / the ADR. → Resolved in 7c12cac: a frozen install without the entry still fails on 2026-10-17 (eslint 10.13.0 published 2026-10-16T14:24Z), so it stays; STACK.md §1.4 documents the exemption policy and removal trigger.
+- [x] **R11 · Minor** — `frontend/eslint.config.ts:135` — `ui-amiga → composables` allows every
   composable, though §1.1 says "generic ones only" (composables may reach stores). Suggested fix:
-  document the limitation in FRONTEND.md §11 or classify generic composables separately.
-- [ ] **R12 · Minor** — `frontend/eslint.config.ts:115` — `typesOnly('api')` allows types from any
+  document the limitation in FRONTEND.md §11 or classify generic composables separately. → Resolved in 2136ae1: limitation documented in FRONTEND.md §11 (generic-only checked in review); §1.1 unchanged.
+- [x] **R12 · Minor** — `frontend/eslint.config.ts:115` — `typesOnly('api')` allows types from any
   `api/` file; §1.1 restricts `office-engine` to `api/schema.d.ts` while §2 rule 4 names
-  `api/types.ts`. Suggested fix: narrow the rule, or align §1.1 with §2 rule 4 and the config.
-- [ ] **R13 · Nit** — `frontend/eslint.config.ts:9-11` — unclassified files (`router.ts`,
+  `api/types.ts`. Suggested fix: narrow the rule, or align §1.1 with §2 rule 4 and the config. → Resolved in 571ee84: `office-engine` type imports narrowed to `api/schema.d.ts` (`fileInternalPath`), faithful to §1.1; fixture `office-engine/imports-api-module.ts`; documented in 2136ae1.
+- [x] **R13 · Nit** — `frontend/eslint.config.ts:9-11` — unclassified files (`router.ts`,
   `assets/`) are unchecked, so `shared → ../router` passes. Suggested fix: note `router.ts` in
-  FRONTEND.md §11 or classify it.
-- [ ] **R14 · Nit** — `frontend/tooling-fixtures/check-tooling.ts:70` — `JSON.parse` breaks on JSONC
-  and ignores `extends`. Suggested fix: `ts.readConfigFile` / `parseJsonConfigFileContent`.
-- [ ] **R15 · Nit** — `frontend/tooling-fixtures/check-tooling.ts:98` — `${cwd}/${file}` assumes
-  POSIX paths. Suggested fix: `path.join`.
-- [ ] **R16 · Nit** — `frontend/tooling-fixtures/check-tooling.ts` — strict `tsconfig.node.json`
-  is not asserted. Suggested fix: check the same options there.
+  FRONTEND.md §11 or classify it. → Resolved in 2136ae1: FRONTEND.md §11 documents that imports of unclassified files (e.g. `shared` → `../router`) are not checked and §1.1 is checked in review.
+- [x] **R14 · Nit** — `frontend/tooling-fixtures/check-tooling.ts:70` — `JSON.parse` breaks on JSONC
+  and ignores `extends`. Suggested fix: `ts.readConfigFile` / `parseJsonConfigFileContent`. → Resolved in 571ee84: `ts.readConfigFile` + `parseJsonConfigFileContent` (JSONC and `extends` verified in a container copy).
+- [x] **R15 · Nit** — `frontend/tooling-fixtures/check-tooling.ts:98` — `${cwd}/${file}` assumes
+  POSIX paths. Suggested fix: `path.join`. → Resolved in 571ee84: `path.resolve`.
+- [x] **R16 · Nit** — `frontend/tooling-fixtures/check-tooling.ts` — strict `tsconfig.node.json`
+  is not asserted. Suggested fix: check the same options there. → Resolved in 571ee84: `tsconfig.node.json` checked with the same options and `types: ["node"]`.
 
 **Notes**
 
@@ -710,3 +710,5 @@ Run in the `frontend/Dockerfile` `dev` target as UID 10001 and in the core `dev`
 - New pins (`eslint-config-prettier` 10.1.8, `@types/node` 24.19.2 with a §9 hold) are exact and in
   STACK.md; everything stays inside `frontend/` (ADR-0004).
 - ROADMAP.md:375-376 `test:watch` and `coverage` scripts correctly left to US-01.07.
+
+**Rework:** 2026-10-17 · head 7c12cac · gates: dev image as UID 10001 `pnpm lint`, `format:check`, `typecheck`, `test` (3), `build`, `check:tooling` (32 expected errors, 11 clean positives) pass; runtime target build pass (no fixtures in web root); container mutation runs on throwaway copies: 33 config mutations with 2 survivors (redundant `@pixi/sound/*` and `windows` → `windows` entries, then removed), 7 re-run on the final config all caught, 2 tsconfig mutations caught and JSONC/`extends` variants accepted; `docker compose config -q` pass; `check_frontend_pins.py` and `pytest scripts/tests` (32) pass; coverage n/a (US-01.07), CI n/a (WP03).
