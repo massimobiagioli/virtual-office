@@ -43,12 +43,13 @@ Every build context has a `.dockerignore` that excludes at least: `.git`, `node_
 `.venv`, `__pycache__`, `dist`, `coverage`, `.pytest_cache`, `.mypy_cache`, `.ruff_cache`,
 `.env*` (except `.env.example`), `*.log`, `.docs`, `.agents`.
 
-`.env` reaches compose only for `${VO_*}` interpolation; the services receive exactly the
-variables under each `environment:` key. `.env.example` therefore lists the variables compose
-interpolates as `NAME=value` and the per-service values compose fixes itself as commented
-`# NAME=value` reference entries, each with its own comment. `python -I
-scripts/check_env_example.py` fails when a `Settings` field or a compose `VO_*` variable is
-missing from it, or when it lists a variable nothing reads (BACKEND.md §11.1).
+`.env` reaches compose only for `${…}` interpolation; the services receive exactly the
+variables under each `environment:` key (no `env_file:`, see §5.1). `.env.example` therefore
+lists the variables compose interpolates as `NAME=value` and the per-service values compose
+fixes itself as commented `# VO_NAME=value` reference entries, each with comment text directly
+above. `python -I scripts/check_env_example.py` enforces all of it: it fails when a `Settings`
+field, a compose `VO_*` name or a compose `${NAME}` interpolation is missing, when an entry has
+the wrong form or no comment, or when it lists a variable nothing reads (BACKEND.md §11.1).
 
 ---
 
@@ -232,11 +233,12 @@ services:
     <<: *app-defaults
     image: virtual-office/core:${VO_IMAGE_TAG:?}
     build: { context: services/core, target: runtime }
-    env_file: [.env]
+    # No env_file: each variable is listed here, `.env` only fills the ${VO_*} placeholders.
     environment:
       VO_DATABASE_URL: postgresql+asyncpg://core_app:${VO_CORE_DB_PASSWORD:?}@postgres:5432/core
       VO_CATALOG_URL: http://catalog:8001/
       VO_OLLAMA_BASE_URL: ${VO_OLLAMA_BASE_URL:-http://ollama:11434/}
+      VO_LOG_LEVEL: ${VO_LOG_LEVEL:-INFO}
     depends_on:
       postgres: { condition: service_healthy }
       migrate-core: { condition: service_completed_successfully }
