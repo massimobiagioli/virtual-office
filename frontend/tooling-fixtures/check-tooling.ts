@@ -45,7 +45,11 @@ const lintExpectations: readonly LintExpectation[] = [
   // Named exports only (FRONTEND.md §2 rule 5).
   { file: fixture('shared/default-export.ts'), ruleId: 'no-restricted-exports', line: 2 },
   // Module boundaries (FRONTEND.md §1.1).
-  { file: fixture('office-engine/imports-vue.ts'), ruleId: 'boundaries/dependencies', line: 2 },
+  ...[2, 3].map((line) => ({
+    file: fixture('office-engine/imports-vue.ts'),
+    ruleId: 'boundaries/dependencies',
+    line,
+  })),
   { file: fixture('office-engine/imports-pixi.ts'), ruleId: 'boundaries/dependencies', line: 2 },
   {
     file: fixture('office-engine/imports-pixi.ts'),
@@ -69,9 +73,9 @@ const lintExpectations: readonly LintExpectation[] = [
     line: 2,
   },
   { file: fixture('ui-amiga/imports-store.ts'), ruleId: 'boundaries/dependencies', line: 2 },
-  { file: fixture('shared/imports-vue.ts'), ruleId: 'boundaries/dependencies', line: 2 },
-  { file: fixture('shared/imports-vue.ts'), ruleId: 'boundaries/dependencies', line: 3 },
-  { file: fixture('shared/imports-vue.ts'), ruleId: 'boundaries/dependencies', line: 4 },
+  ...['shared/imports-vue.ts', 'office-renderer/imports-vue.ts'].flatMap((file) =>
+    [2, 3, 4, 5].map((line) => ({ file: fixture(file), ruleId: 'boundaries/dependencies', line })),
+  ),
   { file: fixture('api/imports-pinia.ts'), ruleId: 'boundaries/dependencies', line: 2 },
   // No audio, ever (Constitution §14.10): one line per banned name.
   ...[3, 4, 5, 6].map((line) => ({

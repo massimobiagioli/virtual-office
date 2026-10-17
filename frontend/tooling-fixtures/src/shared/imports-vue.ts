@@ -2,5 +2,6 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import { createRouter } from 'vue-router'
+import { reactive } from '@vue/reactivity'
 
-export const framework = [ref, defineStore, createRouter]
+export const framework = [ref, defineStore, createRouter, reactive]

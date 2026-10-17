@@ -28,6 +28,9 @@ const typesOnly = (type: string, fileInternalPath = '**') => ({
 const external = (...sources: string[]) => ({
   to: { module: { origin: 'external' as const, source: sources } },
 })
+// The UI framework: allowed only where FRONTEND.md §1.1 lets Vue in (stores, composables,
+// ui-amiga, windows).
+const frameworkPackages = ['vue', 'vue-router', 'pinia', '@vue/*']
 
 // No audio, ever (Constitution §14.10, FRONTEND.md §8.6): libraries, Web Audio, speech
 // synthesis, audio elements and <audio>/<video> with sound.
@@ -138,9 +141,14 @@ export default withVueTs(
               allow: { to: { module: { origin: 'external' } } },
             },
             {
-              // shared/ and api/ are plain TypeScript: no framework (FRONTEND.md §1).
-              from: { element: { types: { anyOf: ['shared', 'api'] } } },
-              disallow: external('vue', 'vue-router', 'pinia', '@vue/*'),
+              // shared/, api/, office-engine/ and office-renderer/ are plain TypeScript (and
+              // PixiJS for the renderer): no framework (FRONTEND.md §1, §1.1).
+              from: {
+                element: {
+                  types: { anyOf: ['shared', 'api', 'office-engine', 'office-renderer'] },
+                },
+              },
+              disallow: external(...frameworkPackages),
             },
             { from: { element: { type: 'api' } }, allow: local('shared') },
             {
@@ -149,7 +157,7 @@ export default withVueTs(
             },
             {
               from: { element: { type: 'office-engine' } },
-              disallow: external('vue', 'vue-router', 'pinia', 'pixi.js', '@pixi/*'),
+              disallow: external('pixi.js', '@pixi/*'),
             },
             {
               from: { element: { type: 'office-renderer' } },

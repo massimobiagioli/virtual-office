@@ -306,9 +306,10 @@ Follow skill `building-office-scene` and STACK.md §4. Code rules:
 - Boundaries (`boundaries/dependencies`, `default: 'disallow'`):
   - "types" in §1.1 means `import type` only; `office-engine` takes types from
     `api/schema.d.ts` only, not from `api/types.ts`.
-  - `shared` and `api` may not import `vue`, `vue-router`, `pinia` or `@vue/*`;
-    `office-engine` may not import those nor `pixi.js`/`@pixi/*`. Other external packages are
-    allowed everywhere (they are pinned in STACK.md).
+  - `shared`, `api`, `office-engine` and `office-renderer` may not import the framework
+    packages `vue`, `vue-router`, `pinia` or `@vue/*`; `office-engine` may not import
+    `pixi.js`/`@pixi/*` either. Other external packages are allowed everywhere (they are
+    pinned in STACK.md).
   - Imports inside one module (`windows` → `windows`) are not checked.
   - Known limitation: the rule cannot tell a generic composable from a domain one, so
     `ui-amiga` → `composables` is allowed for every composable; "generic ones only" (§1.1) is
