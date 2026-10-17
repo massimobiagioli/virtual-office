@@ -1141,36 +1141,38 @@ manual evidence re-run).
 
 **Findings**
 
-- [ ] **R18 · Minor** — `.project/execution/wp01-repository-and-toolchain.md:51,245-246` — Tasks
+- [x] **R18 · Minor** — `.project/execution/wp01-repository-and-toolchain.md:51,245-246` — Tasks
   still say "write the three files" and Tests name only `no-latest`, while the story delivers
   `scripts/check_env_example.py` and its tests (ROADMAP D01.3 lists them; AGENTS.md rule 13).
   Suggested fix: add the check and `scripts/tests/test_check_env_example.py` to Tasks/Tests (and the
-  D01.3 row).
-- [ ] **R19 · Minor** — `scripts/check_env_example.py:62-71`, `scripts/tests/test_check_env_example.py:206-220`
+  D01.3 row). → Resolved in 6cc2bee: US-01.08 Tasks/Tests list `check_env_example.py` and its tests; the D01.3 row names the check and its evidence.
+- [x] **R19 · Minor** — `scripts/check_env_example.py:62-71`, `scripts/tests/test_check_env_example.py:206-220`
   — a non-string `validation_alias` (e.g. `AliasChoices("A", "B")`) is ignored and the check falls
   back to `alias`/`VO_<FIELD>`, which pydantic-settings never reads; the test locks this in.
   Suggested fix: report "cannot resolve the alias, use a string" (or read `AliasChoices` string
-  args) and update the test.
-- [ ] **R20 · Minor** — `scripts/check_env_example.py:143-146` — a variable read by `Settings` but
+  args) and update the test. → Resolved in 2a117ee, 4d1c5ab: a non-string `validation_alias`/`alias` (the one that takes precedence) is reported as "has an alias the check cannot resolve: use a string"; tests updated.
+- [x] **R20 · Minor** — `scripts/check_env_example.py:143-146` — a variable read by `Settings` but
   never passed by compose is accepted in either form; without `env_file` a `NAME=value` line has no
   effect and the variable is unreachable in the stack (DOCKER.md §2). Suggested fix: fail it as
-  "read by a service but not passed by compose" (or require the commented form), with a test.
-- [ ] **R21 · Minor** — `scripts/check_env_example.py:134,149` — no test pins that a comment is used
+  "read by a service but not passed by compose" (or require the commented form), with a test. → Resolved in fa1157b: a `Settings` variable no compose file passes fails in either form ("read by a service but not passed by compose"); compose keys naming a `Settings` variable count as passed and may be listed commented out. The repository passes (all four `Settings` variables are under `environment:`).
+- [x] **R21 · Minor** — `scripts/check_env_example.py:134,149` — no test pins that a comment is used
   once and does not carry over a blank line (two code mutations survived). Suggested fix: failing
-  tests for `VO_A=…` directly followed by `VO_B=…`, and `# text` + blank line + `VO_A=…`.
-- [ ] **R22 · Nit** — `scripts/check_env_example.py:26,30,119` — the `$${` lookbehind and the
+  tests for `VO_A=…` directly followed by `VO_B=…`, and `# text` + blank line + `VO_A=…`. → Resolved in b38b130: tests for `VO_A=…` directly followed by `VO_B=…` and for `# text` + blank line + `VO_A=…`; both surviving mutants now killed.
+- [x] **R22 · Nit** — `scripts/check_env_example.py:26,30,119` — the `$${` lookbehind and the
   `LETTER` requirement are untested (mutations survived). Suggested fix: a `$${BAR}` test and a
-  `"# ..."` case in the parametrize at test line 148.
-- [ ] **R23 · Nit** — `scripts/check_env_example.py:26` — unbraced `$NAME` interpolation is not
+  `"# ..."` case in the parametrize at test line 148. → Resolved in 8a94999: `$${BAR}` (and `$$BAZ`) test and a `"# ..."` case; both surviving mutants now killed.
+- [x] **R23 · Nit** — `scripts/check_env_example.py:26` — unbraced `$NAME` interpolation is not
   collected. Suggested fix: collect it, or state the `${…}`-only convention (DOCKER.md §5.2) in the
-  docstring/§2.
-- [ ] **R24 · Nit** — `scripts/check_env_example.py:27,98` — `YAML_COMMENT` strips ` #` inside quoted
+  docstring/§2. → Resolved in d8f8041: unbraced `$NAME` is collected (`$$` still escapes), with a test; docstring updated.
+- [x] **R24 · Nit** — `scripts/check_env_example.py:27,98` — `YAML_COMMENT` strips ` #` inside quoted
   scalars and block scalars, so the check fails open there. Suggested fix: document the limitation or
-  strip only outside quotes.
-- [ ] **R25 · Nit** — `.docs/DOCKER.md:236`, `.env.example:7` — say `.env` fills the `${VO_*}`
-  placeholders; any `${…}` is filled (and checked). Suggested fix: write `${…}`.
-- [ ] **R26 · Nit** — `.project/ROADMAP.md:320` — "no new decisions are taken in WP01" is stale
-  (ADR-0004…0012 and this story). Suggested fix: "decisions taken in WP01 are recorded in story ADRs".
+  strip only outside quotes. → Resolved in 5ac712a: documented in the docstring (line-based, stdlib only; keep ` #` out of compose values).
+- [x] **R25 · Nit** — `.docs/DOCKER.md:236`, `.env.example:7` — say `.env` fills the `${VO_*}`
+  placeholders; any `${…}` is filled (and checked). Suggested fix: write `${…}`. → Resolved in e7eb666: DOCKER.md §5.2 skeleton and `.env.example` say `${…}`; DOCKER.md §2 summary aligned with R20/R23.
+- [x] **R26 · Nit** — `.project/ROADMAP.md:320` — "no new decisions are taken in WP01" is stale
+  (ADR-0004…0012 and this story). Suggested fix: "decisions taken in WP01 are recorded in story ADRs". → Resolved in 315b1cf: "decisions taken in WP01 are recorded in story ADRs".
+
+**Rework:** 2026-10-17 · head 4d1c5ab · gates: `pytest scripts/tests` 68 passed (branch coverage 98 %, `check_env_example.py` 99 %), ruff check / ruff format --check / mypy --strict on `scripts/` pass, `check_env_example.py`, `check_python_pins.py`, `check_frontend_pins.py`, `check_service_config_drift.py` exit 0, `docker compose config -q` and `--env-file .env.example config -q` pass (host `docker compose`; the rest in the core `dev` image, repo mounted read-only); R21/R22 mutants re-run and killed.
 
 **Notes**
 
