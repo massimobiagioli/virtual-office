@@ -137,10 +137,13 @@ ENTRYPOINT ["uvicorn", "virtual_office.main:create_app", "--factory", "--host", 
 ARG NODE_IMAGE=node:24.22.0-trixie-slim@sha256:<digest>
 ARG NGINX_IMAGE=nginxinc/nginx-unprivileged:1.31.7-alpine3.24@sha256:<digest>
 
-FROM ${NODE_IMAGE} AS deps
+FROM ${NODE_IMAGE} AS base
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0 COREPACK_HOME=/opt/corepack
+RUN groupadd --gid 10001 app && useradd --uid 10001 --gid app --no-create-home app
 WORKDIR /app
 RUN corepack enable
+
+FROM base AS deps
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 RUN corepack install && chmod -R a+rX /opt/corepack
 RUN --mount=type=cache,target=/pnpm-store pnpm install --frozen-lockfile --store-dir /pnpm-store
@@ -154,24 +157,28 @@ FROM ${NGINX_IMAGE} AS runtime
 USER root
 RUN addgroup -g 10001 -S app && adduser -u 10001 -G app -S -D -H app \
     && chown -R 10001:10001 /var/cache/nginx
-COPY --chown=10001:10001 nginx.conf /etc/nginx/conf.d/default.conf
-COPY --chown=10001:10001 security-headers.conf /etc/nginx/security-headers.conf
-COPY --from=build --chown=10001:10001 /app/dist /usr/share/nginx/html
+# Root-owned, read-only for the runtime user: only the nginx cache is writable.
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY security-headers.conf /etc/nginx/security-headers.conf
+COPY --from=build /app/dist /usr/share/nginx/html
 USER 10001
 EXPOSE 8080
 
 FROM deps AS dev
-COPY . ./
-RUN groupadd --gid 10001 app && useradd --uid 10001 --gid app --no-create-home app \
-    && chown -R 10001:10001 /app
+# UID 10001 has no home directory: pnpm and corepack need a writable HOME.
+ENV HOME=/tmp
+COPY --chown=10001:10001 . ./
+RUN chown 10001:10001 /app /app/node_modules
 USER 10001
 EXPOSE 5173
 ENTRYPOINT ["pnpm", "dev", "--host", "0.0.0.0"]
 ```
 
 `nginx.conf` rules: `location = /healthz` returns `200` (used by the healthcheck); SPA fallback
-to `index.html`; `location /api/` and `location /ws` proxied
-to `http://core:8000` (WebSocket upgrade headers, `proxy_read_timeout 3600s` for `/ws`);
+to `index.html`; `location /api/` and `location = /ws` proxied
+to `http://core:8000`, both forwarding `X-Forwarded-For`/`X-Forwarded-Proto` (WebSocket upgrade
+headers, `proxy_read_timeout 3600s` for `/ws`); `location = /favicon.ico` returns `404` until a
+favicon exists in `public/`;
 `Cache-Control: public, max-age=31536000, immutable` for `/assets/`; `no-cache` for
 `index.html`; security headers (`Content-Security-Policy`, `X-Content-Type-Options`,
 `Referrer-Policy`, `Permissions-Policy`, kept in `security-headers.conf` and included by every
