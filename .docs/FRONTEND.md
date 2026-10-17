@@ -358,7 +358,9 @@ Follow skill `building-office-scene` and STACK.md §4. Code rules:
 - ESLint loads `eslint.config.ts` with Node's native type stripping
   (`--flag unstable_native_nodejs_ts_config`, no `jiti`): the config uses erasable syntax only
   and is type-checked through `tsconfig.node.json`.
-- Prettier: `semi: false`, `singleQuote: true`, `printWidth: 100`, `trailingComma: 'all'`.
+- Prettier: `semi: false`, `singleQuote: true`, `printWidth: 100`, `trailingComma: 'all'`,
+  `tabWidth: 2`, `endOfLine: 'lf'` (set explicitly: the root `.editorconfig` is outside the
+  frontend build context, so Prettier in the image cannot read it).
 - Scripts: `pnpm lint` (`--max-warnings 0`), `pnpm format`, `pnpm format:check`,
   `pnpm typecheck` (`vue-tsc --build`, no emit), `pnpm check:tooling` (test scripts: §10).
 - `pnpm check:tooling` runs `tooling-fixtures/check-tooling.ts`: every negative fixture in
