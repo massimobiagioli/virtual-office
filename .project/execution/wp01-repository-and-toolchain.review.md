@@ -950,27 +950,41 @@ throwaway containers.
 
 **Findings**
 
-- [ ] **R16 · Minor** — `frontend/src/shared/clamp.spec.ts:15-17` — the seed spec only asserts the
+- [x] **R16 · Minor** — `frontend/src/shared/clamp.spec.ts:15-17` — the seed spec only asserts the
   seed is a number; mutating `frontend/vitest.setup.ts:22` to `seed: Date.now()` keeps `pnpm test`
   green (feature-review §3 determinism). Suggested fix: export the default seed / a seed helper and
   assert `fc.readConfigureGlobal().seed` equals `FC_SEED` when set, else the fixed default.
+  → Resolved in 44aa90d: `vitest.seed.ts` exports `defaultPropertySeed`/`propertySeed`;
+  `vitest.seed.spec.ts` asserts the global seed equals `propertySeed(FC_SEED)` and the default is
+  `20261017`; `seed: Date.now()` and a changed default now fail `pnpm test` (mutation-checked).
 - [ ] **R17 · Minor** — `frontend/vitest.setup.ts:1-4,22`, `.docs/FRONTEND.md:298-300` — `FC_SEED`
   has no `VO_` prefix and is not a third-party name (Constitution §15.11); FRONTEND.md's exception
   ranks below the Constitution (AGENTS.md rules 1–2). Suggested fix: record in the story ADR that
   §15.11 covers service runtime configuration, not test-runner knobs, or rename to `VO_FC_SEED`.
+  → Deferred to /feature-close (story ADR).
 - [ ] **R18 · Minor** — `.docs/adr/0011-…-committed-fixtures.md:41-45`, `frontend/eslint.config.ts:8-9`
   — ADR-0011 Decision 1 says `tooling-fixtures/` is never part of `pnpm typecheck`; `under-covered/`
   now is (linted and type-checked). Suggested fix: refine it in the story ADR; optionally extend the
-  eslint comment about right-anchored patterns.
-- [ ] **R19 · Nit** — `frontend/package.json:23` — `coverage` repeats `text,json-summary` because CLI
+  eslint comment about right-anchored patterns. → eslint comment extended in bd8b1d8; ADR
+  refinement → Deferred to /feature-close (story ADR).
+- [x] **R19 · Nit** — `frontend/package.json:23` — `coverage` repeats `text,json-summary` because CLI
   reporters replace the config list; a reporter added to the config later would be dropped.
-  Suggested fix: move `html` into config or document "keep in sync".
-- [ ] **R20 · Nit** — `frontend/vitest.setup.ts:11-20` — `FC_SEED` parsing branches (empty,
+  Suggested fix: move `html` into config or document "keep in sync". → Resolved in 02aead6:
+  `html` is in the config reporter list, `coverage` is plain `vitest run`; FRONTEND.md §10 says
+  no script passes `--coverage.reporter`.
+- [x] **R20 · Nit** — `frontend/vitest.setup.ts:11-20` — `FC_SEED` parsing branches (empty,
   invalid, valid) are untested. Suggested fix: a 3-case unit test of the exported helper (with R16).
-- [ ] **R21 · Nit** — `.docs/FRONTEND.md:27-28` — layout comment does not say `under-covered/` has
-  its own tsconfig referenced from `tsconfig.json`. Suggested fix: add it.
+  → Resolved in 44aa90d: unset, empty, valid (`42`, `-7`) and invalid (`abc`, `1.5`, unsafe)
+  cases in `vitest.seed.spec.ts`; each branch mutation-checked.
+- [x] **R21 · Nit** — `.docs/FRONTEND.md:27-28` — layout comment does not say `under-covered/` has
+  its own tsconfig referenced from `tsconfig.json`. Suggested fix: add it. → Resolved in bd8b1d8.
 
 **Notes**
 
 - The coverage gate is now proven from the config itself (include, enabled, thresholds, reporter)
   through the real `pnpm run test` with `--root`.
+
+**Rework:** 2026-10-17 · head bd8b1d8 · gates: `frontend` `dev` image as UID 10001 — `pnpm lint`,
+`format:check`, `typecheck`, `test` (4 files, 15 tests, 100 %), `coverage`, `build`,
+`check:tooling` pass; `FC_SEED=abc` fails; `docker compose config -q` pass; seed mutations
+(`Date.now()`, default changed, empty branch, integer check, returned seed) all caught.
