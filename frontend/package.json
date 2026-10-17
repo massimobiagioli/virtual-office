@@ -18,7 +18,9 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "vue-tsc --build",
-    "test": "vitest run",
+    "test": "vitest run --coverage",
+    "test:watch": "vitest",
+    "coverage": "vitest run --coverage --coverage.reporter=text --coverage.reporter=html",
     "check:tooling": "node tooling-fixtures/check-tooling.ts"
   },
   "dependencies": {
