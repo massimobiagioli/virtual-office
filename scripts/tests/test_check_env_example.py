@@ -27,6 +27,7 @@ services:
     image: virtual-office/core:${VO_IMAGE_TAG:-dev}
     environment:
       VO_DATABASE_URL: postgresql+asyncpg://core_app@postgres:5432/core
+      VO_LOG_LEVEL: ${VO_LOG_LEVEL:-INFO}
 """
 
 ENV_EXAMPLE = """# Virtual Office environment.
@@ -130,9 +131,11 @@ def test_reads_the_prefix_of_each_settings_module(tmp_path: Path) -> None:
     root = write_repository(tmp_path)
     settings = root / "services" / "core" / "src" / "core" / "settings.py"
     settings.write_text(SETTINGS.replace('"VO_"', '"XX_"'), encoding="utf-8")
-    env_example = ENV_EXAMPLE.replace("VO_LOG_LEVEL", "XX_LOG_LEVEL")
-    env_example += "\n# Database of core.\nXX_DATABASE_URL=postgresql://core\n"
-    (root / ".env.example").write_text(env_example, encoding="utf-8")
+    for name in ("docker-compose.yml", ".env.example"):
+        text = (root / name).read_text(encoding="utf-8")
+        text = text.replace("VO_LOG_LEVEL", "XX_LOG_LEVEL")
+        text = text.replace("VO_DATABASE_URL", "XX_DATABASE_URL")
+        (root / name).write_text(text, encoding="utf-8")
 
     assert main(["--root", str(root)]) == 0
 
@@ -211,6 +214,8 @@ def test_prefers_the_validation_alias_and_reads_only_field_aliases(tmp_path: Pat
         '    plain: str = compute(alias="IGNORED")\n'
     )
     settings.write_text(SETTINGS + fields, encoding="utf-8")
+    compose = COMPOSE + "      TOKEN: ${TOKEN:-}\n      VO_PLAIN: ${VO_PLAIN:-}\n"
+    (root / "docker-compose.yml").write_text(compose, encoding="utf-8")
     env_example = ENV_EXAMPLE + "\n# Token.\nTOKEN=x\n# Plain.\nVO_PLAIN=x\n"
     (root / ".env.example").write_text(env_example, encoding="utf-8")
 
@@ -245,7 +250,7 @@ def test_requires_every_variable_compose_interpolates(
     (root / "docker-compose.yml").write_text(compose, encoding="utf-8")
 
     assert main(["--root", str(root)]) == 1
-    assert "docker-compose.yml:9: POSTGRES_PASSWORD missing" in capsys.readouterr().out
+    assert "docker-compose.yml:10: POSTGRES_PASSWORD missing" in capsys.readouterr().out
 
 
 def test_ignores_an_escaped_interpolation(tmp_path: Path) -> None:
@@ -315,3 +320,29 @@ def test_a_blank_line_separates_a_comment_from_the_variable_below(
 
     assert main(["--root", str(root)]) == 1
     assert ".env.example:11: VO_LOG_LEVEL has no comment above it" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize("entry", ["VO_EXTRA=x", "# VO_EXTRA=x"])
+def test_fails_when_a_settings_variable_is_not_passed_by_compose(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], entry: str
+) -> None:
+    root = write_repository(tmp_path, ENV_EXAMPLE + f"\n# Extra.\n{entry}\n")
+    settings = root / "services" / "core" / "src" / "core" / "settings.py"
+    settings.write_text(SETTINGS + '    extra: str = ""\n', encoding="utf-8")
+
+    assert main(["--root", str(root)]) == 1
+    assert (
+        ".env.example:13: VO_EXTRA is read by a service but not passed by compose"
+        in capsys.readouterr().out
+    )
+
+
+def test_a_settings_alias_compose_fixes_is_listed_commented_out(tmp_path: Path) -> None:
+    root = write_repository(tmp_path, ENV_EXAMPLE + "\n# Fixed key.\n# API_KEY=fixed\n")
+    settings = root / "services" / "core" / "src" / "core" / "settings.py"
+    field = '    api_key: str = Field(validation_alias="API_KEY")\n'
+    settings.write_text(SETTINGS + field, encoding="utf-8")
+    compose = COMPOSE + "      API_KEY: fixed\n"
+    (root / "docker-compose.yml").write_text(compose, encoding="utf-8")
+
+    assert main(["--root", str(root)]) == 0

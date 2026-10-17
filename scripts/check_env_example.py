@@ -3,11 +3,12 @@
 The variables in use are the fields of every `services/*/src/*/settings.py` `Settings` class
 (prefixed with the module's `ENV_PREFIX`, or named by a string `validation_alias`/`alias`; any
 other alias fails; `model_config` and `ClassVar`s are not fields) and, in the root
-`docker-compose*.yml` files, every `VO_*` name and every `${NAME}` interpolation outside YAML
-comments. `.env.example` must list each of them once, with comment text directly above: a
-variable compose interpolates as `NAME=value`, a `VO_*` variable compose only sets itself as a
-commented `# VO_NAME=value`. A listed variable that nothing reads fails too: variables are added
-by the story that starts reading them.
+`docker-compose*.yml` files, every `VO_*` or `Settings` name and every `${NAME}` interpolation
+outside YAML comments. `.env.example` must list each of them once, with comment text directly
+above: a variable compose interpolates as `NAME=value`, a variable compose only sets itself as
+a commented `# NAME=value`. A `Settings` variable that no compose file passes fails in either
+form, because the services never read `.env` (DOCKER.md §2). A listed variable that nothing
+reads fails too: variables are added by the story that starts reading them.
 
 Usage: python -I scripts/check_env_example.py [--root REPOSITORY_ROOT]
 """
@@ -22,10 +23,10 @@ from pathlib import Path
 ENV_EXAMPLE = ".env.example"
 DEFAULT_PREFIX = "VO_"
 ALIAS_KEYWORDS = ("validation_alias", "alias")  # in order of precedence
-COMPOSE_VARIABLE = re.compile(r"\bVO_[A-Z0-9_]+\b")
+COMPOSE_NAME = re.compile(r"\b[A-Z][A-Z0-9_]*\b")
 INTERPOLATION = re.compile(r"(?<!\$)\$\{([A-Za-z_][A-Za-z0-9_]*)")
 YAML_COMMENT = re.compile(r"(?:^|\s)#.*$")
-ENTRY = re.compile(r"^(?:(?P<commented>#\s?)(?P<vo>VO_[A-Z0-9_]*)|(?P<name>[A-Z][A-Z0-9_]*))=")
+ENTRY = re.compile(r"^(?P<commented>#\s?)?(?P<name>[A-Z][A-Z0-9_]*)=")
 RULER = re.compile(r"^[-=*~#]{3}")
 LETTER = re.compile(r"[A-Za-z]")
 
@@ -35,6 +36,7 @@ class Usage:
     """Where each variable is read, by whom, and what could not be resolved."""
 
     where: dict[str, str] = field(default_factory=dict)
+    settings: set[str] = field(default_factory=set)
     composed: set[str] = field(default_factory=set)
     interpolated: set[str] = field(default_factory=set)
     problems: list[str] = field(default_factory=list)
@@ -100,17 +102,23 @@ def scan_settings(path: Path, root: Path, usage: Usage) -> None:
                         )
                         continue
                     name = alias or f"{prefix}{item.target.id.upper()}"
+                    usage.settings.add(name)
                     usage.add(name, f"{where}:{item.lineno}")
 
 
 def scan_compose(path: Path, root: Path, usage: Usage) -> None:
-    """Record every `VO_*` name and `${NAME}` interpolation of a compose file."""
+    """Record every `VO_*` or `Settings` name and `${NAME}` interpolation of a compose file."""
     where = path.relative_to(root).as_posix()
     for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
         code = YAML_COMMENT.sub("", line)
         interpolated = INTERPOLATION.findall(code)
         usage.interpolated.update(interpolated)
-        for name in [*COMPOSE_VARIABLE.findall(code), *interpolated]:
+        names = [
+            name
+            for name in COMPOSE_NAME.findall(code)
+            if name.startswith(DEFAULT_PREFIX) or name in usage.settings
+        ]
+        for name in [*names, *interpolated]:
             usage.composed.add(name)
             usage.add(name, f"{where}:{number}")
 
@@ -141,16 +149,22 @@ def check(root: Path) -> list[str]:
     comments: list[str] = []
     for number, line in enumerate(env_example.read_text(encoding="utf-8").splitlines(), start=1):
         entry = ENTRY.match(line)
-        if not entry:
+        name = entry.group("name") if entry else ""
+        if not entry or (
+            entry.group("commented")
+            and not name.startswith(DEFAULT_PREFIX)
+            and name not in usage.where
+        ):
             comments = [*comments, line] if line.startswith("#") else []
             continue
-        name = entry.group("vo") or entry.group("name")
         where = f"{ENV_EXAMPLE}:{number}: {name}"
         if name in listed:
             problems.append(f"{where} is listed twice")
         listed.add(name)
         if name not in usage.where:
             problems.append(f"{where} is not read by any service or compose file")
+        elif name in usage.settings and name not in usage.composed:
+            problems.append(f"{where} is read by a service but not passed by compose")
         elif entry.group("commented") and name in usage.interpolated:
             problems.append(f"{where} is interpolated by compose: list it as NAME=value")
         elif not entry.group("commented") and name in usage.composed - usage.interpolated:
