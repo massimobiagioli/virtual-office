@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { increment } from './partly-covered'
+import { increment } from './covered'
 
 describe('increment', () => {
   it('adds one to the value', () => {

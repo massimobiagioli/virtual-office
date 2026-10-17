@@ -1,0 +1,9 @@
+{
+  // Coverage fixture project (US-01.07): ordinary source, linted by `pnpm lint` and
+  // type-checked by `pnpm typecheck`; never built.
+  "extends": "../../tsconfig.app.json",
+  "compilerOptions": {
+    "tsBuildInfoFile": "../../node_modules/.tmp/tsconfig.under-covered.tsbuildinfo"
+  },
+  "include": ["src/**/*.ts"]
+}

@@ -1,9 +1,5 @@
-// Coverage fixture (US-01.07): the spec beside it exercises only `increment`, so lines,
-// statements, functions and branches stay well below the 70 % global threshold.
-export function increment(value: number): number {
-  return value + 1
-}
-
+// Coverage fixture (US-01.07): no spec imports this module. Only the explicit `coverage.include`
+// of `vitest.config.ts` counts it, as 0 %, and that pulls every total under the 70 % threshold.
 export function describeSign(value: number): string {
   if (value > 0) {
     return 'positive'
