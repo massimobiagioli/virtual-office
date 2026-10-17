@@ -48,7 +48,9 @@ ENV HOME=/tmp
 COPY --chown=10001:10001 . ./
 # Only /app and /app/node_modules change owner, so the tools can create dist/,
 # node_modules/.vite and node_modules/.tmp without a recursive chown duplicating node_modules.
-RUN chown 10001:10001 /app /app/node_modules
+# pnpm writes its workspace state file with mode 0600: UID 10001 must own it, or the
+# `verifyDepsBeforeRun` check cannot read it, assumes stale deps and fails a reinstall.
+RUN chown 10001:10001 /app /app/node_modules /app/node_modules/.pnpm-workspace-state-v1.json
 USER 10001
 EXPOSE 5173
 ENTRYPOINT ["pnpm", "dev", "--host", "0.0.0.0"]
