@@ -203,21 +203,38 @@ def test_reads_a_string_alias_as_is(
     assert "VO_ANTHROPIC_API_KEY" not in output
 
 
-def test_prefers_the_validation_alias_and_ignores_a_non_string_alias(tmp_path: Path) -> None:
+def test_prefers_the_validation_alias_and_reads_only_field_aliases(tmp_path: Path) -> None:
     root = write_repository(tmp_path)
     settings = root / "services" / "core" / "src" / "core" / "settings.py"
     fields = (
-        '    token: str = Field(alias="TOKEN_ALIAS", validation_alias="TOKEN")\n'
-        '    choice: str = Field(validation_alias=AliasChoices("A", "B"))\n'
+        '    token: str = Field(alias=ALIAS, validation_alias="TOKEN", default=make())\n'
         '    plain: str = compute(alias="IGNORED")\n'
     )
     settings.write_text(SETTINGS + fields, encoding="utf-8")
-    env_example = ENV_EXAMPLE + (
-        "\n# Token.\nTOKEN=x\n# Choice.\nVO_CHOICE=x\n# Plain.\nVO_PLAIN=x\n"
-    )
+    env_example = ENV_EXAMPLE + "\n# Token.\nTOKEN=x\n# Plain.\nVO_PLAIN=x\n"
     (root / ".env.example").write_text(env_example, encoding="utf-8")
 
     assert main(["--root", str(root)]) == 0
+
+
+@pytest.mark.parametrize(
+    "alias",
+    ['validation_alias=AliasChoices("A", "B")', "alias=NAME", 'validation_alias=NAME, alias="A"'],
+)
+def test_fails_when_an_alias_is_not_a_string(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], alias: str
+) -> None:
+    root = write_repository(tmp_path)
+    settings = root / "services" / "core" / "src" / "core" / "settings.py"
+    settings.write_text(SETTINGS + f"    choice: str = Field({alias})\n", encoding="utf-8")
+
+    assert main(["--root", str(root)]) == 1
+    output = capsys.readouterr().out
+    assert (
+        "services/core/src/core/settings.py:14: choice has an alias the check cannot resolve: "
+        "use a string" in output
+    )
+    assert "missing from .env.example" not in output
 
 
 def test_requires_every_variable_compose_interpolates(
@@ -231,13 +248,13 @@ def test_requires_every_variable_compose_interpolates(
     assert "docker-compose.yml:9: POSTGRES_PASSWORD missing" in capsys.readouterr().out
 
 
-
 def test_ignores_an_escaped_interpolation(tmp_path: Path) -> None:
     root = write_repository(tmp_path)
     compose = COMPOSE + '    command: ["sh", "-c", "echo $${BAR}"]\n'
     (root / "docker-compose.yml").write_text(compose, encoding="utf-8")
 
     assert main(["--root", str(root)]) == 0
+
 
 def test_ignores_variables_named_only_in_a_trailing_comment(tmp_path: Path) -> None:
     root = write_repository(tmp_path)
@@ -272,7 +289,6 @@ def test_fails_when_a_variable_compose_fixes_is_not_commented_out(
         ".env.example:7: VO_DATABASE_URL is fixed by compose: list it as # NAME=value"
         in capsys.readouterr().out
     )
-
 
 
 def test_a_comment_documents_only_the_variable_right_below_it(

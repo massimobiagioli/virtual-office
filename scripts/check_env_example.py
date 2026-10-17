@@ -1,13 +1,13 @@
 """Fail when `.env.example` does not document every environment variable (Constitution §15.11).
 
 The variables in use are the fields of every `services/*/src/*/settings.py` `Settings` class
-(prefixed with the module's `ENV_PREFIX`, or named by a string `validation_alias`/`alias`;
-`model_config` and `ClassVar`s are not fields) and, in the root `docker-compose*.yml` files,
-every `VO_*` name and every `${NAME}` interpolation outside YAML comments. `.env.example` must
-list each of them once, with comment text directly above: a variable compose interpolates as
-`NAME=value`, a `VO_*` variable compose only sets itself as a commented `# VO_NAME=value`. A
-listed variable that nothing reads fails too: variables are added by the story that starts
-reading them.
+(prefixed with the module's `ENV_PREFIX`, or named by a string `validation_alias`/`alias`; any
+other alias fails; `model_config` and `ClassVar`s are not fields) and, in the root
+`docker-compose*.yml` files, every `VO_*` name and every `${NAME}` interpolation outside YAML
+comments. `.env.example` must list each of them once, with comment text directly above: a
+variable compose interpolates as `NAME=value`, a `VO_*` variable compose only sets itself as a
+commented `# VO_NAME=value`. A listed variable that nothing reads fails too: variables are added
+by the story that starts reading them.
 
 Usage: python -I scripts/check_env_example.py [--root REPOSITORY_ROOT]
 """
@@ -32,11 +32,12 @@ LETTER = re.compile(r"[A-Za-z]")
 
 @dataclass
 class Usage:
-    """Where each variable is read, and which of them compose interpolates."""
+    """Where each variable is read, by whom, and what could not be resolved."""
 
     where: dict[str, str] = field(default_factory=dict)
     composed: set[str] = field(default_factory=set)
     interpolated: set[str] = field(default_factory=set)
+    problems: list[str] = field(default_factory=list)
 
     def add(self, name: str, where: str) -> None:
         self.where.setdefault(name, where)
@@ -59,24 +60,28 @@ def is_class_variable(annotation: ast.expr) -> bool:
     return ast.unparse(annotation).split("[")[0].split(".")[-1] == "ClassVar"
 
 
+class UnresolvedAliasError(ValueError):
+    """A `Field(...)` alias that is not a string literal, so its variable name is unknown."""
+
+
 def field_alias(value: ast.expr | None) -> str | None:
-    """The string `validation_alias` (or else `alias`) of a `Field(...)` default, if any."""
+    """The `validation_alias` (or else `alias`) string of a `Field(...)` default, if any."""
     if not (isinstance(value, ast.Call) and ast.unparse(value.func).split(".")[-1] == "Field"):
         return None
-    aliases = {
-        keyword.arg: keyword.value.value
-        for keyword in value.keywords
-        if isinstance(keyword.value, ast.Constant) and isinstance(keyword.value.value, str)
-    }
-    return next((aliases[name] for name in ALIAS_KEYWORDS if name in aliases), None)
+    aliases = {keyword.arg: keyword.value for keyword in value.keywords}
+    alias = next((aliases[name] for name in ALIAS_KEYWORDS if name in aliases), None)
+    if alias is None:
+        return None
+    if isinstance(alias, ast.Constant) and isinstance(alias.value, str):
+        return alias.value
+    raise UnresolvedAliasError
 
 
-def settings_variables(path: Path, root: Path) -> dict[str, str]:
-    """Variable name → `file:line` of the `Settings` field that reads it."""
+def scan_settings(path: Path, root: Path, usage: Usage) -> None:
+    """Record the variable each field of the module's `Settings` class reads."""
     tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
     prefix = module_prefix(tree)
     where = path.relative_to(root).as_posix()
-    found: dict[str, str] = {}
     for node in tree.body:
         if isinstance(node, ast.ClassDef) and node.name == "Settings":
             for item in node.body:
@@ -86,9 +91,16 @@ def settings_variables(path: Path, root: Path) -> dict[str, str]:
                     and item.target.id != "model_config"
                     and not is_class_variable(item.annotation)
                 ):
-                    name = field_alias(item.value) or f"{prefix}{item.target.id.upper()}"
-                    found[name] = f"{where}:{item.lineno}"
-    return found
+                    try:
+                        alias = field_alias(item.value)
+                    except UnresolvedAliasError:
+                        usage.problems.append(
+                            f"{where}:{item.lineno}: {item.target.id} has an alias the check "
+                            "cannot resolve: use a string"
+                        )
+                        continue
+                    name = alias or f"{prefix}{item.target.id.upper()}"
+                    usage.add(name, f"{where}:{item.lineno}")
 
 
 def scan_compose(path: Path, root: Path, usage: Usage) -> None:
@@ -106,8 +118,7 @@ def scan_compose(path: Path, root: Path, usage: Usage) -> None:
 def used_variables(root: Path) -> Usage:
     usage = Usage()
     for path in sorted(root.glob("services/*/src/*/settings.py")):
-        for name, where in settings_variables(path, root).items():
-            usage.add(name, where)
+        scan_settings(path, root, usage)
     for path in sorted(root.glob("docker-compose*.yml")):
         scan_compose(path, root, usage)
     return usage
@@ -125,7 +136,7 @@ def check(root: Path) -> list[str]:
         return [f"{ENV_EXAMPLE}: file not found"]
 
     usage = used_variables(root)
-    problems: list[str] = []
+    problems = list(usage.problems)
     listed: set[str] = set()
     comments: list[str] = []
     for number, line in enumerate(env_example.read_text(encoding="utf-8").splitlines(), start=1):
