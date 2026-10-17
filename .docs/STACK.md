@@ -27,7 +27,9 @@ tools. Changing anything here requires a repository ADR.
    - Docker images: full version tag **plus** digest (`postgres:18.6-trixie@sha256:…`). The
      digest is added when the Dockerfile/compose file is created.
    - npm: exact versions in `package.json` (no `^`, no `~`), `pnpm-lock.yaml` committed,
-     `save-exact=true` in `.npmrc`.
+     `save-exact=true` and `engine-strict=true` in `.npmrc`, and `saveExact: true` and
+     `engineStrict: true` in `frontend/pnpm-workspace.yaml` (pnpm 12 reads its settings from
+     there and ignores those `.npmrc` keys).
    - Python: exact `==` pins in `pyproject.toml` for direct dependencies, `uv.lock` committed.
    - Ollama models: explicit size/quantization tag (`qwen3.6:27b`), never bare names.
 5. **Compatibility beats novelty, explicitly.** When the newest release of a tool is
