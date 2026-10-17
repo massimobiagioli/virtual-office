@@ -168,7 +168,8 @@ FROM deps AS dev
 # UID 10001 has no home directory: pnpm and corepack need a writable HOME.
 ENV HOME=/tmp
 COPY --chown=10001:10001 . ./
-RUN chown 10001:10001 /app /app/node_modules
+# The 0600 pnpm state file must be readable by UID 10001, or `verifyDepsBeforeRun` fails.
+RUN chown 10001:10001 /app /app/node_modules /app/node_modules/.pnpm-workspace-state-v1.json
 USER 10001
 EXPOSE 5173
 ENTRYPOINT ["pnpm", "dev", "--host", "0.0.0.0"]
