@@ -844,60 +844,83 @@ throwaway containers.
 
 **Findings**
 
-- [ ] **R1 · Major** — `frontend/tooling-fixtures/src/under-covered/src/partly-covered.ts:1`,
+- [x] **R1 · Major** — `frontend/tooling-fixtures/src/under-covered/src/partly-covered.ts:1`,
   `frontend/tooling-fixtures/check-tooling.ts:149-287` — the negative check never proves the
   explicit `coverage.include` (`vitest.config.ts:18`): deleting it and adding an untested
   `src/shared/untested.ts` left `pnpm test` at "100 %" and `check:tooling` green, so the
   documented "unimported files count as 0 %" (FRONTEND.md §10) is unprotected (feature-review §3,
   ADR-0009). Suggested fix: add a never-imported module to the fixture so only it pulls totals under
   70 %, and assert its 0 % row in the report.
-- [ ] **R2 · Minor** — `frontend/package.json:21` — thresholds fire only because the `test` script
+  → Resolved in c8733fe: fixture moved to `tooling-fixtures/under-covered/` with a fully covered `shared/covered.ts` and a never-imported `shared/never-imported.ts`; the check asserts the latter at 0 % and the former ≥ 70 % from `coverage-summary.json`; mutation (no `coverage.include`) now fails the check.
+- [x] **R2 · Minor** — `frontend/package.json:21` — thresholds fire only because the `test` script
   passes `--coverage`; changing it to `vitest run` leaves `check:tooling` green (the check passes
   `--coverage` itself, `check-tooling.ts:250`). Suggested fix: `coverage.enabled: true` in the config
   (`test:watch` opts out) and drop the flag from the check, or assert the script.
-- [ ] **R3 · Minor** — `frontend/src/shared/clamp.spec.ts:32,43` — `fc.assert` uses an unfixed
+  → Resolved in 37a1d44: `coverage.enabled: true` in `vitest.config.ts`, `test` is `vitest run`, `test:watch` opts out with `--coverage.enabled=false`; the check runs the real `pnpm run test` (c8733fe), so dropping `enabled` or disabling coverage in the script both fail it (mutation-tested).
+- [x] **R3 · Minor** — `frontend/src/shared/clamp.spec.ts:32,43` — `fc.assert` uses an unfixed
   random seed (feature-review §3, PRINCIPLES.md:92 "deterministic"). Suggested fix: pin a seed via
   a Vitest `setupFiles` entry with `fc.configureGlobal({ seed })` (env override for exploration), or
   record the exception in the story ADR.
-- [ ] **R4 · Minor** — `frontend/tooling-fixtures/src/under-covered/` — the coverage fixture lives
+  → Resolved in b6d6872: `vitest.setup.ts` (`setupFiles`, absolute path) calls `fc.configureGlobal({ seed })` with a fixed seed, `FC_SEED` overrides it (validated integer); a spec asserts the seed is set.
+- [x] **R4 · Minor** — `frontend/tooling-fixtures/src/under-covered/` — the coverage fixture lives
   in the lint-fixture tree, which is ESLint-ignored (`eslint.config.ts:84`) on the ADR-0011 premise
   that it holds only asserted lint fixtures; the new files are neither linted nor type-checked and
   `under-covered/` is not a §1.1 module. Suggested fix: move to `tooling-fixtures/coverage/` under a
   checked tsconfig, or record the exception in the story ADR (amending ADR-0011 Decision 1).
-- [ ] **R5 · Minor** — `frontend/tooling-fixtures/check-tooling.ts:268` — `/Tests\s+1 passed \(1\)/`
+  → Resolved in c8733fe: fixture now lives in `tooling-fixtures/under-covered/src/shared/` (a §1.1-shaped module), outside the ESLint-ignored `tooling-fixtures/src/`, linted by `pnpm lint` and type-checked by `pnpm typecheck` via its own tsconfig referenced from `tsconfig.json`; ADR-0011 premise unchanged. (`tooling-fixtures/coverage/` was not used: the `.gitignore` rule `coverage/` matches it.)
+- [x] **R5 · Minor** — `frontend/tooling-fixtures/check-tooling.ts:268` — `/Tests\s+1 passed \(1\)/`
   matches Vitest's human summary, not a stable interface; a minor upgrade could break the check
   without any rule changing. Suggested fix: `--reporter=json --outputFile=<tmp>` and assert
   `numPassedTests`/`numFailedTests`; keep the threshold regex as proof the gate fires.
-- [ ] **R6 · Minor** — `frontend/vitest.config.ts:22`, `.project/ROADMAP.md:962,1064` — only the
+  → Resolved in c8733fe: the check adds `--reporter=json --outputFile.json=<tmp>` and asserts `numTotalTests`/`numPassedTests` = 1, `numFailedTests` = 0; the threshold regexes stay as proof the gate fires.
+- [x] **R6 · Minor** — `frontend/vitest.config.ts:22`, `.project/ROADMAP.md:962,1064` — only the
   `text` reporter; WP03 promises a coverage XML artifact. Suggested fix: add `json-summary` now, or
   state in FRONTEND.md §10 / the story ADR that WP03 adds the cobertura reporter.
-- [ ] **R7 · Minor** — `.project/ROADMAP.md:974` — WP03 `frontend-checks` still says
+  → Resolved in c8733fe, d5f7340: `json-summary` reporter added (also in `pnpm coverage`); FRONTEND.md §10 states WP03 adds the cobertura XML reporter.
+- [x] **R7 · Minor** — `.project/ROADMAP.md:974` — WP03 `frontend-checks` still says
   `pnpm test --coverage`, now redundant. Suggested fix: `pnpm test` (coverage included).
+  → Resolved in d5f7340: WP03 `frontend-checks` now says `pnpm test` (coverage included).
 - [ ] **R8 · Minor** — `.project/execution/wp01-repository-and-toolchain.md:210` — the story makes
   its own decisions (`main.ts` excluded, `--root` reuse of the real config, reporters, fixture
   placement, `pnpm test` always with coverage, seed policy), so it needs its own story ADR
   (AGENTS.md rule 14). Suggested fix: write ADR-0012 at `/feature-close`.
-- [ ] **R9 · Nit** — `frontend/tooling-fixtures/check-tooling.ts:248` — spawns the internal path
+  → Deferred to /feature-close (story ADR).
+- [x] **R9 · Nit** — `frontend/tooling-fixtures/check-tooling.ts:248` — spawns the internal path
   `node_modules/vitest/vitest.mjs`. Suggested fix: resolve the bin via `createRequire` or
   `pnpm exec vitest`.
-- [ ] **R10 · Nit** — `frontend/tooling-fixtures/check-tooling.ts:147-150` — comment says "not a copy
+  → Resolved in c8733fe: the check spawns `pnpm run test` instead of `node_modules/vitest/vitest.mjs`.
+- [x] **R10 · Nit** — `frontend/tooling-fixtures/check-tooling.ts:147-150` — comment says "not a copy
   of them" but `globalThreshold = 70` is one. Suggested fix: say it is the §18.2 expectation the
   config must match.
-- [ ] **R11 · Nit** — `frontend/src/shared/clamp.ts:2` — `NaN` bounds are not rejected, so the
+  → Resolved in c8733fe: comment now says `globalThreshold` is the §18.2 expectation the config must match.
+- [x] **R11 · Nit** — `frontend/src/shared/clamp.ts:2` — `NaN` bounds are not rejected, so the
   "closed range" contract is not fully guarded. Suggested fix: extend the `RangeError` guard, with a
   test.
-- [ ] **R12 · Nit** — `.docs/FRONTEND.md:351-353` — run-on sentence mixes the coverage check into
+  → Resolved in c668e40: `clamp` throws `RangeError` on a NaN bound, with a test.
+- [x] **R12 · Nit** — `.docs/FRONTEND.md:351-353` — run-on sentence mixes the coverage check into
   the lint-fixture rule. Suggested fix: separate sentence; widen the closing rule to "a lint rule or
   a coverage threshold".
-- [ ] **R13 · Nit** — `.docs/FRONTEND.md:344` — §11 script list omits `test`, `test:watch`,
+  → Resolved in d5f7340: coverage check in its own sentence; rule widened to "a lint rule or a coverage threshold".
+- [x] **R13 · Nit** — `.docs/FRONTEND.md:344` — §11 script list omits `test`, `test:watch`,
   `coverage`. Suggested fix: "(test scripts: §10)" pointer.
-- [ ] **R14 · Nit** — `.docs/FRONTEND.md:377` — §13 checklist says "vitest … green" only.
+  → Resolved in d5f7340: §11 scripts line ends with "(test scripts: §10)".
+- [x] **R14 · Nit** — `.docs/FRONTEND.md:377` — §13 checklist says "vitest … green" only.
   Suggested fix: "vitest (coverage thresholds met)".
-- [ ] **R15 · Nit** — `.project/execution/wp01-repository-and-toolchain.md:225` — "Tests: sample
+  → Resolved in d5f7340: §13 checklist says "vitest (coverage thresholds met)".
+- [x] **R15 · Nit** — `.project/execution/wp01-repository-and-toolchain.md:225` — "Tests: sample
   spec files" could name `shared/clamp.spec.ts` and the coverage fixture. Optional.
+  → Resolved in d5f7340: Tests line names `src/shared/clamp.spec.ts` and `tooling-fixtures/under-covered/`.
 
 **Notes**
 
 - The threshold check runs the real `vitest.config.ts` via `--root` with a temporary
   `reportsDirectory` and asserts all four metrics — the ADR-0009 lesson applied.
 - Pins match STACK.md §3; no release-age exemption needed.
+
+**Rework:** 2026-10-17 · head d5f7340 · gates: `frontend/Dockerfile` `dev` target as UID 10001 —
+`pnpm lint`, `pnpm format:check`, `pnpm typecheck`, `pnpm test` (3 files, 11 tests, 100 %),
+`pnpm coverage`, `pnpm build`, `pnpm check:tooling` (45 lint expectations, 11 positives,
+never-imported file fails 4 metrics) pass; runtime target build pass; `docker compose config -q`
+pass; `check_frontend_pins.py` and `pytest scripts/tests` (32) in the core `dev` image pass;
+mutations in throwaway containers: no `coverage.include`, no `coverage.enabled`, `test` script with
+`--coverage.enabled=false` — all 3 caught. E2E, CI not available (WP14+, WP03).
