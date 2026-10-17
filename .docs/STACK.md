@@ -373,13 +373,14 @@ the role eval sets whenever a model tag changes.
 virtual-office/
 ├── AGENTS.md
 ├── docker-compose.yml · docker-compose.dev.yml · docker-compose.gpu.yml · Makefile · .env.example · renovate.json
+├── .editorconfig · .gitignore      # repository-wide editor and ignore rules
 ├── .docs/                        # Constitution, Stack, Principles, ADRs
 ├── .agents/skills/               # Contributor skills
 ├── frontend/                     # Vue + Vite SPA, ui-amiga kit, office-engine, Dockerfile, nginx.conf
 ├── services/
 │   ├── core/                     # FastAPI + Pydantic AI, pyproject.toml · uv.lock, Dockerfile, alembic/
 │   └── catalog/                  # FastAPI, catalog/ (prompts, role YAML, characters), pyproject.toml · uv.lock, Dockerfile, alembic/
-├── scripts/                      # Repository checks, stdlib only, run with `python -I` (pins, drift, coverage, no-latest)
+├── scripts/                      # Repository checks, stdlib only, run with `python -I` (pins, drift, coverage, env example, no-latest)
 ├── assets/                       # Sprites, tiles, maps, fonts (+ LICENSES.md, src/)
 └── e2e/                          # Playwright tests against the compose stack
 ```
