@@ -1031,55 +1031,79 @@ Core and catalog `dev` images (repo mounted read-only), `frontend/Dockerfile` `d
   the `.env.example` claim breaks once WP02 copies the skeleton (AGENTS.md rule 2). Suggested fix:
   drop `env_file` from the skeleton (list variables explicitly, §5.2 rule 6), or reword both texts
   to "today" with WP02 deciding; record the choice in the story ADR.
+  → Partly done in 2c008a7: §5.1 skeleton drops `env_file: [.env]` and lists the service variables (incl. `VO_LOG_LEVEL`), §2 text says "no `env_file:`"; the guide no longer contradicts itself. Recording the choice → Deferred to /feature-close (story ADR).
 - [ ] **R2 · Minor** — `.project/execution/wp01-repository-and-toolchain.md:240` — AC3 is ticked
   including "passes the `no-latest` check", which does not exist yet; only a substring stand-in
   (`test_check_env_example.py:59-63`) covers it (AGENTS.md rule 15). Suggested fix: note "verified
   by the stand-in test; re-verified in US-01.09" on the AC (and in the story ADR), and make sure
   US-01.09 scans the real `.env.example`.
-- [ ] **R3 · Minor** — `scripts/check_env_example.py:94` — any `#` line counts as the variable's
+  → Partly done in 49f8f83: AC3 annotated (no-latest part verified by the stand-in test, re-verified in US-01.09) and US-01.09 tasks now require the real check to scan `.env.example`. Recording it → Deferred to /feature-close (story ADR).
+- [x] **R3 · Minor** — `scripts/check_env_example.py:94` — any `#` line counts as the variable's
   comment, so a bare `#` or a `# --- … ---` ruler passes (mutation survived); AC3 says "each with a
   comment". Suggested fix: require non-empty comment text that is not a ruler, with failing tests.
+  → Resolved in 40bca9f: the comment block above an entry must contain words and not only a bare `#` or a `---`/`===` ruler; parametrized tests.
 - [ ] **R4 · Minor** — `scripts/check_env_example.py` (new), `.project/ROADMAP.md:390-399` — a new
   repository check beyond "write the three files" is a decision of its own (AGENTS.md rule 14,
   ADR-0009) and ROADMAP D01.3 does not list it. Suggested fix: record it in the story ADR and add it
   to the D01.3 contents.
-- [ ] **R5 · Minor** — `.docs/STACK.md:375,382` — the §10 layout omits `.editorconfig` and
+  → Partly done in 9fe67e2: ROADMAP D01.3 lists `scripts/check_env_example.py` and its test. The decision record → Deferred to /feature-close (story ADR).
+- [x] **R5 · Minor** — `.docs/STACK.md:375,382` — the §10 layout omits `.editorconfig` and
   `.gitignore` (ROADMAP:316 lists them) and the `scripts/` comment omits the env-example check.
   Suggested fix: update both lines.
+  → Resolved in 9fe67e2: STACK.md §10 lists `.editorconfig · .gitignore` and the `scripts/` comment names the env-example check.
 - [ ] **R6 · Minor** — `docker-compose.yml:33,44` — `VO_LOG_LEVEL: ${VO_LOG_LEVEL:-INFO}` is
   compose wiring beyond the story's three files and missing from the DOCKER.md §5.1 skeleton
   (`:-` is right for an optional variable). Suggested fix: add it to the skeleton and justify it in
   the story ADR as an extension of ADR-0006's temporary defaults.
-- [ ] **R7 · Minor** — `.editorconfig:14-15` — the comment says the section covers `uv.lock`, but
+  → Partly done in 2c008a7: `VO_LOG_LEVEL: ${VO_LOG_LEVEL:-INFO}` added to the DOCKER.md §5.1 skeleton. Justification as an extension of ADR-0006's temporary defaults → Deferred to /feature-close (story ADR).
+- [x] **R7 · Minor** — `.editorconfig:14-15` — the comment says the section covers `uv.lock`, but
   `[*.{py,pyi,toml}]` does not match it (uv.lock uses 4 spaces). Suggested fix:
   `[{*.{py,pyi,toml},uv.lock}]` or drop it from the comment.
+  → Resolved in ba1ea2b: section is `[{*.{py,pyi,toml},uv.lock}]`.
 - [ ] **R8 · Minor** — `.editorconfig` vs Constitution §15.2 (`CONSTITUTION.md:1245`), ADR-0004 §3 —
   the layout lists only orchestration files at the root. Suggested fix: state in the story ADR that
   repository-wide dotfiles (`.gitignore`, `.editorconfig`) are allowed at the root.
-- [ ] **R9 · Minor** — `scripts/check_env_example.py:46-48` — every annotated name in `Settings`
+  → Deferred to /feature-close (story ADR): only the ADR can state that repository-wide dotfiles are allowed at the root.
+- [x] **R9 · Minor** — `scripts/check_env_example.py:46-48` — every annotated name in `Settings`
   becomes a variable: an annotated `model_config` or a `ClassVar` would yield `VO_MODEL_CONFIG`, and
   `Field(validation_alias=…)` (BACKEND.md §4.3 third-party names) would be wrongly prefixed.
   Suggested fix: skip `model_config`/`ClassVar`, honour string `alias`/`validation_alias`, test each.
-- [ ] **R10 · Minor** — `scripts/check_env_example.py:21,69` — compose scanning only collects `VO_*`
+  → Resolved in 40bca9f: `model_config` and `ClassVar` (incl. `typing.ClassVar`) skipped; a string `validation_alias` (preferred) or `alias` of `Field(...)` is read as-is; tests for each.
+- [x] **R10 · Minor** — `scripts/check_env_example.py:21,69` — compose scanning only collects `VO_*`
   tokens, so a future non-`VO_` interpolation (`${POSTGRES_PASSWORD:?}`) would not be required in
   `.env.example` (DOCKER.md §2 "every variable"). Suggested fix: also collect `\$\{NAME` interpolations.
-- [ ] **R11 · Minor** — `scripts/check_env_example.py:84-95` vs `.docs/DOCKER.md:47-49` — the check
+  → Resolved in 40bca9f: every `${NAME` interpolation (not `$${`) is collected, so `${POSTGRES_PASSWORD:?}` is required; test.
+- [x] **R11 · Minor** — `scripts/check_env_example.py:84-95` vs `.docs/DOCKER.md:47-49` — the check
   does not enforce the documented split (interpolated → `NAME=value`, compose-fixed → `# NAME=value`);
   an uncommented `VO_DATABASE_URL=` would mislead. Suggested fix: require the matching form, or soften
   DOCKER.md to "by convention".
-- [ ] **R12 · Nit** — `scripts/check_env_example.py:22` — `ENTRY` matches comment prose like
+  → Resolved in 40bca9f: interpolated variables must be `NAME=value`, compose-only `VO_*` variables `# VO_NAME=value`; two failing-form tests; DOCKER.md §2 updated (2c008a7).
+- [x] **R12 · Nit** — `scripts/check_env_example.py:22` — `ENTRY` matches comment prose like
   `# NOTE=…`. Suggested fix: require `VO_` (or a known name) in the commented form.
-- [ ] **R13 · Nit** — `scripts/check_env_example.py:57` — a trailing `# VO_X` YAML comment counts as
+  → Resolved in 40bca9f: the commented form is an entry only for `VO_*` names, so `# NOTE=…` is comment text; test.
+- [x] **R13 · Nit** — `scripts/check_env_example.py:57` — a trailing `# VO_X` YAML comment counts as
   a use. Suggested fix: strip trailing comments.
-- [ ] **R14 · Nit** — `.editorconfig` — no `max_line_length = 100` although ruff and Prettier agree on
+  → Resolved in 40bca9f: YAML comments (`#` at line start or after whitespace) are stripped before scanning; test.
+- [x] **R14 · Nit** — `.editorconfig` — no `max_line_length = 100` although ruff and Prettier agree on
   100. Suggested fix: add it.
-- [ ] **R15 · Nit** — `.env.example:13-14` — "CI sets it to the current commit" describes WP03.
+  → Resolved in ba1ea2b: `max_line_length = 100` in `[*]`, `off` for Markdown (tables, links).
+- [x] **R15 · Nit** — `.env.example:13-14` — "CI sets it to the current commit" describes WP03.
   Suggested fix: "CI will set it (WP03)".
-- [ ] **R16 · Nit** — `frontend/.prettierrc.json` — the root `.editorconfig` is outside the frontend
+  → Resolved in 4beff34: "CI will set it to the current commit (WP03)".
+- [x] **R16 · Nit** — `frontend/.prettierrc.json` — the root `.editorconfig` is outside the frontend
   build context, so Prettier in the image ignores it and matches only by its defaults. Suggested fix:
   set `endOfLine: "lf"` and `tabWidth: 2` explicitly, or note it in `.editorconfig`.
+  → Resolved in 839d2ee: `tabWidth: 2` and `endOfLine: "lf"` set in `frontend/.prettierrc.json`, FRONTEND.md §11 updated; `pnpm format:check` and `pnpm lint` pass.
 - [ ] **R17 · Nit** — AC1/AC2 have no automated test (only manual evidence). Suggested fix (optional):
   a `scripts/tests` case asserting the AC2 `git check-ignore` paths.
+  → Won't fix: the dev images have no `git`, so a `git check-ignore` test would not run in the dockerized gate; AC2 keeps the manual `git check-ignore` evidence of round 1.
+
+**Rework:** 2026-10-17 · head 49f8f83 · gates: core `dev` image (repo read-only) `pytest scripts/tests`
+57 passed, branch coverage 97 % (`check_env_example.py` 99 %), `ruff check`, `ruff format --check`,
+`mypy --strict` on `scripts/`, `check_env_example.py`, `check_python_pins.py`, `check_frontend_pins.py`,
+`check_service_config_drift.py` pass; `docker compose config -q` and with `--env-file .env.example`
+pass; frontend `dev` image as UID 10001 `pnpm format:check`, `pnpm lint` pass; `no-latest` n/a
+(US-01.09), CI n/a (WP03); R1, R2, R4, R6, R8 keep an ADR part deferred to /feature-close.
 
 **Notes**
 
