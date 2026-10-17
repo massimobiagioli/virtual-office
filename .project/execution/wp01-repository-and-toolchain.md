@@ -236,7 +236,7 @@ Renovate configuration, `.env.example`, `.gitignore`, `.editorconfig`.
   `.env.example`, so that every machine behaves the same and secrets never get committed.
 - **Acceptance criteria:**
   - [x] AC1 — `.editorconfig` sets UTF-8, LF, final newline, 2 spaces for TS/Vue/YAML/JSON, 4 for Python.
-  - [ ] AC2 — `.gitignore` ignores `.env`, build outputs, caches, `node_modules`, `.venv`.
+  - [x] AC2 — `.gitignore` ignores `.env`, build outputs, caches, `node_modules`, `.venv`.
   - [x] AC3 — `.env.example` lists every `VO_*` variable known so far, each with a comment, no real
     secrets, and passes the `no-latest` check.
 - **Tasks:** write the three files.
