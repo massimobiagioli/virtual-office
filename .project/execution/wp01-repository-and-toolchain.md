@@ -190,15 +190,18 @@ Renovate configuration, `.env.example`, `.gitignore`, `.editorconfig`.
 - **Story:** As a tech lead, I want strict TS and ESLint rules from FRONTEND.md §2 and §11, so
   that style debates never happen in review.
 - **Acceptance criteria:**
-  - [ ] AC1 — Given `tsconfig.app.json`, when inspected, then all compiler options listed in
+  - [x] AC1 — Given `tsconfig.app.json`, when inspected, then all compiler options listed in
     FRONTEND.md §2 are set.
-  - [ ] AC2 — Given `eslint.config.ts`, when a fixture SFC uses the Options API, then lint fails with
+  - [x] AC2 — Given `eslint.config.ts`, when a fixture SFC uses the Options API, then lint fails with
     `vue/component-api-style`.
-  - [ ] AC3 — Given the boundaries config, when a fixture file in `office-engine/` imports `vue` or
+  - [x] AC3 — Given the boundaries config, when a fixture file in `office-engine/` imports `vue` or
     `pixi.js`, then lint fails.
-  - [ ] AC4 — Given Prettier config, when `pnpm format:check` runs on the skeleton, then it passes.
-- **Tasks:** write configs; add negative fixtures under `frontend/tooling-fixtures/`
-  (excluded from build) and a script asserting they fail.
+  - [x] AC4 — Given Prettier config, when `pnpm format:check` runs on the skeleton, then it passes.
+- **Tasks:**
+  - [x] Write configs (`eslint.config.ts`, `.prettierrc.json`, strict `tsconfig.node.json`) and
+    the scripts `lint`, `format`, `format:check`, `check:tooling`.
+  - [x] Add negative fixtures under `frontend/tooling-fixtures/` (excluded from build), incl.
+    audio usage (Constitution §14.10), and a script asserting they fail.
 - **Tests:** tooling script in CI.
 - **Done when:** positive passes, negatives fail.
 
