@@ -20,3 +20,6 @@ export const viaWindow = new window.Audio()
 export const viaGlobalThis = new globalThis.AudioContext()
 export const viaSelf = self.speechSynthesis
 export const created = document.createElement('audio')
+export const createdVideo = document.createElement('VIDEO')
+export const createdInNamespace = document.createElementNS('http://www.w3.org/1999/xhtml', 'audio')
+export const createdFromTemplate = document.createElement(`video`)

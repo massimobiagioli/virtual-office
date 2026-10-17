@@ -96,12 +96,12 @@ const lintExpectations: readonly LintExpectation[] = [
     line,
     messageIncludes: noSound,
   })),
-  {
+  ...[22, 23, 24, 25].map((line) => ({
     file: fixture('shared/uses-audio.ts'),
     ruleId: 'no-restricted-syntax',
-    line: 22,
+    line,
     messageIncludes: noSound,
-  },
+  })),
   ...[2, 3].map((line) => ({
     file: fixture('office-renderer/imports-sound.ts'),
     ruleId: 'no-restricted-imports',

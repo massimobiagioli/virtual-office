@@ -247,8 +247,9 @@ Follow skill `building-office-scene` and STACK.md §4. Code rules:
    from a component).
 5. No allocations per frame in `update/render` paths; use pools.
 6. **No audio**: no audio libraries, files or Web Audio code (Constitution §14.10); ESLint
-   forbids the audio libraries (`@pixi/sound`, `howler`, `tone`), the Web Audio and speech
-   globals, `document.createElement('audio')`, `<audio>` and `<video>` without `muted` (§11).
+   forbids the audio libraries (`@pixi/sound`, `howler`, `tone`), audio file imports, the
+   Web Audio, `HTMLAudioElement` and speech globals, creating `<audio>`/`<video>` from script,
+   `<audio>` and `<video>` without `muted` in templates (full lists in §11).
 7. Assets loaded once through `Assets.load` with a manifest; atlas frames referenced by the
    naming scheme in DESIGN.md §8.
 
@@ -302,7 +303,9 @@ Follow skill `building-office-scene` and STACK.md §4. Code rules:
   - `no-restricted-globals`: `Audio`, `AudioContext`, `OfflineAudioContext`,
     `webkitAudioContext`, `HTMLAudioElement`, `speechSynthesis`, `SpeechSynthesisUtterance`;
   - `no-restricted-properties`: the same names on `window`, `globalThis` and `self`;
-  - `no-restricted-syntax`: `document.createElement('audio')`;
+  - `no-restricted-syntax`: `createElement` and `createElementNS` with the tag name `audio`
+    or `video` (any case) as a string or a static template literal; computed tag names are
+    not caught and are checked in review. A muted `<video>` goes in a template;
   - `vue/no-restricted-html-elements`: `<audio>`; `vue/no-restricted-syntax`: `<video>`
     without the static `muted` attribute.
 - Boundaries (`boundaries/dependencies`, `default: 'disallow'`):
