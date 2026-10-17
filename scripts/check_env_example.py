@@ -3,12 +3,12 @@
 The variables in use are the fields of every `services/*/src/*/settings.py` `Settings` class
 (prefixed with the module's `ENV_PREFIX`, or named by a string `validation_alias`/`alias`; any
 other alias fails; `model_config` and `ClassVar`s are not fields) and, in the root
-`docker-compose*.yml` files, every `VO_*` or `Settings` name and every `${NAME}` interpolation
-outside YAML comments. `.env.example` must list each of them once, with comment text directly
-above: a variable compose interpolates as `NAME=value`, a variable compose only sets itself as
-a commented `# NAME=value`. A `Settings` variable that no compose file passes fails in either
-form, because the services never read `.env` (DOCKER.md §2). A listed variable that nothing
-reads fails too: variables are added by the story that starts reading them.
+`docker-compose*.yml` files, every `VO_*` or `Settings` name and every `${NAME}` or `$NAME`
+interpolation outside YAML comments. `.env.example` must list each of them once, with comment
+text directly above: a variable compose interpolates as `NAME=value`, a variable compose only
+sets itself as a commented `# NAME=value`. A `Settings` variable that no compose file passes
+fails in either form, because the services never read `.env` (DOCKER.md §2). A listed variable
+that nothing reads fails too: variables are added by the story that starts reading them.
 
 Usage: python -I scripts/check_env_example.py [--root REPOSITORY_ROOT]
 """
@@ -24,7 +24,7 @@ ENV_EXAMPLE = ".env.example"
 DEFAULT_PREFIX = "VO_"
 ALIAS_KEYWORDS = ("validation_alias", "alias")  # in order of precedence
 COMPOSE_NAME = re.compile(r"\b[A-Z][A-Z0-9_]*\b")
-INTERPOLATION = re.compile(r"(?<!\$)\$\{([A-Za-z_][A-Za-z0-9_]*)")
+INTERPOLATION = re.compile(r"(?<!\$)\$\{?([A-Za-z_][A-Za-z0-9_]*)")  # `$$` escapes
 YAML_COMMENT = re.compile(r"(?:^|\s)#.*$")
 ENTRY = re.compile(r"^(?P<commented>#\s?)?(?P<name>[A-Z][A-Z0-9_]*)=")
 RULER = re.compile(r"^[-=*~#]{3}")
@@ -107,7 +107,7 @@ def scan_settings(path: Path, root: Path, usage: Usage) -> None:
 
 
 def scan_compose(path: Path, root: Path, usage: Usage) -> None:
-    """Record every `VO_*` or `Settings` name and `${NAME}` interpolation of a compose file."""
+    """Record every `VO_*` or `Settings` name and every interpolation of a compose file."""
     where = path.relative_to(root).as_posix()
     for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
         code = YAML_COMMENT.sub("", line)
