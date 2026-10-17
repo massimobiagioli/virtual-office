@@ -326,8 +326,8 @@ Raw commands, for everything the Makefile does not wrap:
 | Follow logs of one service           | `docker compose logs -f core` |
 | Backend tests                        | `docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm core pytest` |
 | Backend lint and types               | `docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm core sh -c "ruff check && ruff format --check && mypy && lint-imports"` |
-| Frontend tests and checks            | `docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm frontend sh -c "pnpm lint && pnpm typecheck && pnpm test"` |
-| Frontend checks until the dev overlay exists (WP02) | `docker build --target dev -t vo-frontend-dev frontend && docker run --rm --entrypoint sh vo-frontend-dev -c "pnpm typecheck && pnpm test && pnpm build"` |
+| Frontend tests and checks            | `docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm frontend sh -c "pnpm lint && pnpm format:check && pnpm typecheck && pnpm test && pnpm check:tooling"` |
+| Frontend checks until the dev overlay exists (WP02) | `docker build --target dev -t vo-frontend-dev frontend && docker run --rm --entrypoint sh vo-frontend-dev -c "pnpm lint && pnpm format:check && pnpm typecheck && pnpm test && pnpm build && pnpm check:tooling"` |
 | Run migrations manually              | `docker compose run --rm migrate-core` |
 | Rebuild projections                  | `docker compose --profile admin run --rm rebuild-projections` |
 | Backup database                      | `docker compose --profile backup run --rm backup` |

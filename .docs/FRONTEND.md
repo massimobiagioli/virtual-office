@@ -247,8 +247,8 @@ Follow skill `building-office-scene` and STACK.md §4. Code rules:
    from a component).
 5. No allocations per frame in `update/render` paths; use pools.
 6. **No audio**: no audio libraries, files or Web Audio code (Constitution §14.10); ESLint
-   `no-restricted-imports`/`no-restricted-globals` forbid `@pixi/sound`, `Audio` and
-   `AudioContext`.
+   forbids the audio libraries (`@pixi/sound`, `howler`, `tone`), the Web Audio and speech
+   globals, `document.createElement('audio')`, `<audio>` and `<video>` without `muted` (§11).
 7. Assets loaded once through `Assets.load` with a manifest; atlas frames referenced by the
    naming scheme in DESIGN.md §8.
 
@@ -292,12 +292,31 @@ Follow skill `building-office-scene` and STACK.md §4. Code rules:
 - Additional rules: `vue/block-order` (`script`, `template`, `style`),
   `vue/component-api-style: ['script-setup']`, `vue/define-macros-order`,
   `vue/no-unused-properties`, `@typescript-eslint/consistent-type-imports`,
-  `no-restricted-imports` for `pixi.js`/`@pixi/*` outside `office-renderer` and for audio
-  libraries everywhere, `no-restricted-globals` for `Audio`/`AudioContext` (§8.6),
-  `no-restricted-exports` on default exports in `*.ts` except `*.config.ts` (§2 rule 5).
-- Boundaries: `assets/` and the files at the root of `src/` (`main.ts`, `App.vue`,
-  `router.ts`) are not §1.1 modules and stay unclassified; "types" in §1.1 means
-  `import type` only.
+  `no-restricted-exports` on default exports in `*.ts` except `*.config.ts` (§2 rule 5),
+  `no-restricted-imports` for `pixi.js`/`@pixi/*` outside `office-renderer`, and the no-audio
+  rules of §8.6, all with the Constitution §14.10 message:
+  - `no-restricted-imports`: `@pixi/sound`, `howler`, `tone` and their subpaths, everywhere
+    (`office-renderer` included);
+  - `no-restricted-globals`: `Audio`, `AudioContext`, `OfflineAudioContext`,
+    `webkitAudioContext`, `HTMLAudioElement`, `speechSynthesis`, `SpeechSynthesisUtterance`;
+  - `no-restricted-properties`: the same names on `window`, `globalThis` and `self`;
+  - `no-restricted-syntax`: `document.createElement('audio')`;
+  - `vue/no-restricted-html-elements`: `<audio>`; `vue/no-restricted-syntax`: `<video>`
+    without the static `muted` attribute.
+- Boundaries (`boundaries/dependencies`, `default: 'disallow'`):
+  - "types" in §1.1 means `import type` only; `office-engine` takes types from
+    `api/schema.d.ts` only, not from `api/types.ts`.
+  - `shared` and `api` may not import `vue`, `vue-router`, `pinia` or `@vue/*`;
+    `office-engine` may not import those nor `pixi.js`/`@pixi/*`. Other external packages are
+    allowed everywhere (they are pinned in STACK.md).
+  - Imports inside one module (`windows` → `windows`) are not checked.
+  - Known limitation: the rule cannot tell a generic composable from a domain one, so
+    `ui-amiga` → `composables` is allowed for every composable; "generic ones only" (§1.1) is
+    checked in review.
+  - Known limitation: `assets/` and the files at the root of `src/` (`main.ts`, `App.vue`,
+    `router.ts`) are not §1.1 modules and stay unclassified, and imports of unclassified files
+    are not checked (e.g. `shared` → `../router` passes lint): §1.1 still applies to them and
+    is checked in review.
 - ESLint loads `eslint.config.ts` with Node's native type stripping
   (`--flag unstable_native_nodejs_ts_config`, no `jiti`): the config uses erasable syntax only
   and is type-checked through `tsconfig.node.json`.
@@ -306,8 +325,11 @@ Follow skill `building-office-scene` and STACK.md §4. Code rules:
   `pnpm typecheck` (`vue-tsc --build`, no emit), `pnpm check:tooling`.
 - `pnpm check:tooling` runs `tooling-fixtures/check-tooling.ts`: every negative fixture in
   `tooling-fixtures/src/` (globally ignored by `pnpm lint`) must fail with its expected rule id
-  at its file and line, and `tsconfig.app.json` must set every §2 option. Add a fixture and an
-  expectation whenever a lint rule protects a Constitution or §1.1 rule.
+  at its file and line (and, where two config entries share a rule id, with its message), every
+  positive fixture (one per §1.1 edge allowed) must lint with no message at all, and
+  `tsconfig.app.json` and `tsconfig.node.json` (read by the TypeScript parser, `extends`
+  included) must set every §2 option. Add a fixture and an expectation whenever a lint rule
+  protects a Constitution or §1.1 rule.
 
 ---
 
