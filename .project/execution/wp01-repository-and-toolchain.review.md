@@ -538,3 +538,54 @@ ESLint/Prettier, frontend coverage, `no-latest`, Playwright: not available.
   cache policy, JSON logs and `server_tokens off`.
 - Commit bodies document the pnpm 12 `.npmrc` behaviour well; for the ADR: no `@` alias yet,
   `depends_on: [core]` because nginx needs a resolvable upstream (WP02 hardens).
+
+### Round 2 · 2026-10-17 · branch `feat/us-01-05-vue-vite-app` · head `31e763d`
+
+**Verdict:** APPROVED
+
+**Quality gate**
+
+Run in the `frontend/Dockerfile` `dev` target as UID 10001 (`HOME=/tmp`), the core `dev` image
+for `scripts/`, and `make up` from the repository root.
+
+| Gate | Result |
+| ---- | ------ |
+| `pnpm typecheck` | pass (exit 0; pre-run install noise, see R16) |
+| `pnpm test` (2 files, 3 tests) | pass (same noise) |
+| R2 mutation (remove `<RouterView/>`) | fails as expected |
+| `pnpm build` (hashed assets) | pass (same noise) |
+| `docker compose config -q` | pass |
+| `make up` + curl smoke (`/`, deep link, `/healthz`, favicon 404, `/wsfoo` fallback, `/ws` reaches core, immutable assets, root-owned nginx config) | pass |
+| `pytest scripts/tests` (31 tests, branch coverage 95 %) | pass |
+| `ruff check` / `ruff format --check` / `mypy --strict` on `scripts/` | pass |
+| `check_frontend_pins.py`, `check_python_pins.py`, `check_service_config_drift.py` | pass |
+| ESLint/Prettier, frontend coverage, `no-latest`, Playwright | not available (US-01.06, US-01.07, US-01.09, WP14+) |
+
+**Round 1 follow-up** — R1–R9, R11–R14 verified fixed. R10 and R15 are ADR items that are
+still pending until `/feature-close` writes the story ADR (see R17).
+
+**Findings**
+
+- [ ] **R16 · Minor** — `frontend/Dockerfile:51` — the non-recursive chown (R5) leaves
+  `node_modules/.bin` and `.modules.yaml` root-owned, so every `pnpm <script>` as UID 10001
+  prints `ERR_PNPM_PACKAGE_MANAGER_REMOVE_MODULES_DIR … Permission denied` from
+  `verifyDepsBeforeRun`; gates pass only because it is a warning. Suggested fix: chown those
+  paths too (or disable `verifyDepsBeforeRun` with a reason) and confirm no `ERR_PNPM` output.
+- [ ] **R17 · Minor** — `.project/execution/wp01-repository-and-toolchain.review.md` (Round 1
+  R10, R15) — ticked "Resolved at close" although no ADR exists yet (feature-rework.md:32-33,
+  AGENTS.md rule 15). Suggested fix: mark them "Deferred to /feature-close (story ADR)" until
+  close records them and writes the ADR id.
+- [ ] **R18 · Minor** — `.docs/FRONTEND.md:36` — the §1 layout does not show the new
+  `src/windows/WorkbenchDesktop.vue`; `windows/` is described as "one folder per Workbench
+  window". Suggested fix: add a layout line for the root-route view (moved/reshaped in WP08).
+- [ ] **R19 · Nit** — `.docs/FRONTEND.md:18-19` — no pointer to `scripts/check_frontend_pins.py`
+  (only STACK.md §1.4 and BACKEND.md mention it). Suggested fix: one line next to the
+  `.npmrc` / `pnpm-workspace.yaml` entries.
+- [ ] **R20 · Nit** — `scripts/check_frontend_pins.py:81-84` — no test for a STACK.md §3 without
+  a Node.js/pnpm row (branch uncovered, file at 94 %). Suggested fix: one fixture test expecting
+  exit 1 and the message.
+
+**Notes**
+
+- Ownership hardening, `location = /ws`, the router history injection and the new pin check
+  are clean; all commit subjects are ≤ 72 characters with the trailer.
