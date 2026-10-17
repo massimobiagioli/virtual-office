@@ -1111,3 +1111,70 @@ pass; frontend `dev` image as UID 10001 `pnpm format:check`, `pnpm lint` pass; `
   `file:line`, real-repository test); `.env.example` explains which values compose actually reads.
 - Scope-less `build:`/`docs:` subjects have precedent on main; scoped forms would match recent
   history better.
+
+### Round 2 · 2026-10-17 · branch `feat/us-01-08-editor-ignore-and-env-files` · head `d7de34c`
+
+**Verdict:** APPROVED
+
+**Quality gate**
+
+Fresh core, catalog and frontend `dev` images (repo mounted read-only; frontend as UID 10001);
+mutations on `git archive` copies.
+
+| Gate | Result |
+| ---- | ------ |
+| `pytest scripts/tests` (57, branch coverage 97 %; `check_env_example.py` 99 %) | pass |
+| `ruff check` / `ruff format --check` / `mypy --strict` on `scripts/` | pass |
+| `check_env_example.py`, `check_python_pins.py`, `check_frontend_pins.py`, `check_service_config_drift.py` | pass |
+| core pytest (19), catalog pytest (19) | pass |
+| `docker compose config -q`, `--env-file .env.example config -q` | pass |
+| `pnpm format:check`, `pnpm lint`, `pnpm test` | pass |
+| `.editorconfig` conformance; AC2 `git check-ignore` evidence | pass |
+| input mutations (19) | all behave as expected except two parser blind spots (R23, R24) |
+| code mutations (15) | 11 killed; survivors R21, R22 |
+| `no-latest` | not available (US-01.09; stand-in test only) |
+| CI | not available (WP03) |
+
+**Round 1 follow-up** — R3, R5, R7, R9–R16 verified fixed; R1, R2, R4, R6 code/doc parts verified,
+their ADR parts and R8 deferred to `/feature-close`; R17 won't fix (no `git` in the dev images;
+manual evidence re-run).
+
+**Findings**
+
+- [ ] **R18 · Minor** — `.project/execution/wp01-repository-and-toolchain.md:51,245-246` — Tasks
+  still say "write the three files" and Tests name only `no-latest`, while the story delivers
+  `scripts/check_env_example.py` and its tests (ROADMAP D01.3 lists them; AGENTS.md rule 13).
+  Suggested fix: add the check and `scripts/tests/test_check_env_example.py` to Tasks/Tests (and the
+  D01.3 row).
+- [ ] **R19 · Minor** — `scripts/check_env_example.py:62-71`, `scripts/tests/test_check_env_example.py:206-220`
+  — a non-string `validation_alias` (e.g. `AliasChoices("A", "B")`) is ignored and the check falls
+  back to `alias`/`VO_<FIELD>`, which pydantic-settings never reads; the test locks this in.
+  Suggested fix: report "cannot resolve the alias, use a string" (or read `AliasChoices` string
+  args) and update the test.
+- [ ] **R20 · Minor** — `scripts/check_env_example.py:143-146` — a variable read by `Settings` but
+  never passed by compose is accepted in either form; without `env_file` a `NAME=value` line has no
+  effect and the variable is unreachable in the stack (DOCKER.md §2). Suggested fix: fail it as
+  "read by a service but not passed by compose" (or require the commented form), with a test.
+- [ ] **R21 · Minor** — `scripts/check_env_example.py:134,149` — no test pins that a comment is used
+  once and does not carry over a blank line (two code mutations survived). Suggested fix: failing
+  tests for `VO_A=…` directly followed by `VO_B=…`, and `# text` + blank line + `VO_A=…`.
+- [ ] **R22 · Nit** — `scripts/check_env_example.py:26,30,119` — the `$${` lookbehind and the
+  `LETTER` requirement are untested (mutations survived). Suggested fix: a `$${BAR}` test and a
+  `"# ..."` case in the parametrize at test line 148.
+- [ ] **R23 · Nit** — `scripts/check_env_example.py:26` — unbraced `$NAME` interpolation is not
+  collected. Suggested fix: collect it, or state the `${…}`-only convention (DOCKER.md §5.2) in the
+  docstring/§2.
+- [ ] **R24 · Nit** — `scripts/check_env_example.py:27,98` — `YAML_COMMENT` strips ` #` inside quoted
+  scalars and block scalars, so the check fails open there. Suggested fix: document the limitation or
+  strip only outside quotes.
+- [ ] **R25 · Nit** — `.docs/DOCKER.md:236`, `.env.example:7` — say `.env` fills the `${VO_*}`
+  placeholders; any `${…}` is filled (and checked). Suggested fix: write `${…}`.
+- [ ] **R26 · Nit** — `.project/ROADMAP.md:320` — "no new decisions are taken in WP01" is stale
+  (ADR-0004…0012 and this story). Suggested fix: "decisions taken in WP01 are recorded in story ADRs".
+
+**Notes**
+
+- Editing the not-yet-started US-01.09 tasks to require scanning `.env.example` is an acceptable
+  task-level refinement within the WP; the story ADR should mention it.
+- Dropping `env_file` from the DOCKER.md skeleton is consistent with Constitution §15.11, DOCKER.md
+  §5.2 rule 6 and the WP02 secrets plan (`${VO_*_PASSWORD:?}` interpolation).
